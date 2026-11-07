@@ -157,6 +157,13 @@ func _base_passthrough_polygon() -> PackedVector2Array:
 	var right := World.HORIZON_RECT.position.x + World.HORIZON_RECT.size.x
 	var top := World.GROUND_Y
 	var bottom := 720.0 if hud._bottom != null and hud._bottom.visible else World.GROUND_Y + World.HORIZON_RECT.size.y
+	if Net.in_party:
+		return PackedVector2Array([
+			Vector2(left, 560.0),
+			Vector2(right, 560.0),
+			Vector2(right, bottom),
+			Vector2(left, bottom),
+		])
 	var char_left := World.CHAR_X - 35.0
 	var char_right := World.CHAR_X + 35.0
 	var char_top := top - World.CHAR_SIZE - 26.0
