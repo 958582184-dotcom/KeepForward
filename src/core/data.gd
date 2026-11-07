@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.66.0"
+const VERSION := "0.67.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -384,7 +384,10 @@ static func fmt_primary(key: String, value: float) -> String:
 
 
 static func exp_to_next(level: int) -> int:
-	return int(round(70.0 * pow(float(level), 1.45)))
+	var base := 70.0 * pow(float(level), 1.45)
+	if level <= 5:
+		base *= 0.85
+	return int(round(base))
 
 
 static func dungeon_level_range(player_level: int, area: Dictionary) -> Vector2i:
@@ -406,20 +409,32 @@ static func enemy_level_exponent(level: int) -> float:
 	return pow(1.025, float(maxi(0, level - 1))) * (1.0 + 0.08 * float(tier))
 
 
+static func enemy_early_factor(level: int) -> float:
+	match level:
+		1:
+			return 0.85
+		2:
+			return 0.90
+		3:
+			return 0.95
+		_:
+			return 1.0
+
+
 static func monster_hp(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
-	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"]) * enemy_level_exponent(level)
+	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"]) * enemy_level_exponent(level) * enemy_early_factor(level)
 
 
 static func monster_damage(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
-	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"]) * enemy_level_exponent(level)
+	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"]) * enemy_level_exponent(level) * enemy_early_factor(level)
 
 
 static func monster_armor(level: int) -> float:
-	return (8.0 + 3.5 * level) * enemy_level_exponent(level)
+	return (8.0 + 3.5 * level) * enemy_level_exponent(level) * enemy_early_factor(level)
 
 
 static func exp_reward(type_id: String, level: int, diff: String) -> int:
