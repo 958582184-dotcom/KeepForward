@@ -1,9 +1,7 @@
-# Godot generated files
+﻿# Godot generated files
 .godot/
-shots/
-tools/
 *.tmp
 
-# Exported builds
+# Exported build
 build/
 *.zip

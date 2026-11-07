@@ -353,6 +353,13 @@ func _run_settest() -> void:
 		Game.equipment[key] = it
 	var st2 := Game.compute_stats()
 	print("SETTEST split_levels active=%s" % str(st2.get("active_sets", [])))
+	for lv in [8, 12, 16, 30]:
+		Game.level = lv
+		for key in Data.EQUIP_ORDER:
+			var it := GameItem.create(Game.rng, lv, 2, "warrior", key, "test")
+			it.req_level = 1
+			Game.equipment[key] = it
+		print("SETTEST cp lv=%d blue=%d" % [lv, Game.combat_power()])
 	get_tree().quit()
 
 
