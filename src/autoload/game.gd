@@ -61,14 +61,13 @@ var save_path := Data.SAVE_PATH
 
 
 func _ready() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--"):
-			save_path = "user://test_save.json"
-			break
+	if not OS.get_cmdline_user_args().is_empty():
+		save_path = "user://test_save.json"
 	rng.randomize()
 	inventory.resize(Data.INVENTORY_SIZE)
 	_clear_equipment()
 	_migrate_old_save()
+	_recover_backup_if_needed()
 	loaded = load_game()
 	if loaded:
 		refresh_dungeons(false)
@@ -88,6 +87,41 @@ func _process(delta: float) -> void:
 
 
 # ---------- 新游戏 / 存档 ----------
+
+func _backup_current_save() -> void:
+	if save_path != Data.SAVE_PATH or not FileAccess.file_exists(save_path):
+		return
+	var text := FileAccess.get_file_as_string(save_path)
+	if text.is_empty():
+		return
+	if not (JSON.parse_string(text) is Dictionary):
+		return
+	var backup := FileAccess.open(save_path + ".bak", FileAccess.WRITE)
+	if backup == null:
+		return
+	backup.store_string(text)
+	backup.close()
+
+
+func _recover_backup_if_needed() -> void:
+	if save_path != Data.SAVE_PATH:
+		return
+	var backup_path := save_path + ".bak"
+	if not FileAccess.file_exists(backup_path):
+		return
+	var text := FileAccess.get_file_as_string(save_path)
+	var parsed: Variant = JSON.parse_string(text) if not text.is_empty() else null
+	if parsed is Dictionary:
+		return
+	var backup_text := FileAccess.get_file_as_string(backup_path)
+	if backup_text.is_empty():
+		return
+	var f := FileAccess.open(save_path, FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_string(backup_text)
+	f.close()
+
 
 func _migrate_old_save() -> void:
 	if save_path != Data.SAVE_PATH:
@@ -159,6 +193,7 @@ func _clear_equipment() -> void:
 func save_game() -> void:
 	if class_id == "":
 		return
+	_backup_current_save()
 	var eq := {}
 	for key in Data.EQUIP_ORDER:
 		if equipment.get(key) != null:
