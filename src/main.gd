@@ -541,6 +541,25 @@ func _run_shot() -> void:
 			"encounter":
 				if not Game.dungeons.is_empty():
 					world.start_dungeon(Game.dungeons[0])
+			"party":
+				var p1: Dictionary = Game.profile_snapshot()
+				p1["id"] = 1
+				p1["position"] = 1
+				p1["is_leader"] = true
+				var p2: Dictionary = Game.profile_snapshot()
+				p2["id"] = 2
+				p2["character_id"] = "sera"
+				p2["name"] = "塞拉"
+				p2["position"] = 2
+				Net.in_party = true
+				Net.local_id = 1
+				Net.is_host = true
+				Net.members = [p1, p2]
+				world.set_party_members(Net.members)
+				world._player_bar.visible = true
+				world._player_bar.value = world._player_bar.max_value * 0.8
+				world._shield_bar.visible = true
+				world._shield_bar.value = world._shield_bar.max_value * 0.45
 			"bossencounter":
 				Game.exploration = 100.0
 				world.start_dungeon(Game.make_boss_dungeon())

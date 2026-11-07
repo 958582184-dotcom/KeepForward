@@ -145,10 +145,9 @@ func set_class(cid: String) -> void:
 	_player_bar.show_percentage = false
 	_player_bar.visible = false
 	add_child(_player_bar)
-	_shield_bar = UiKit.progress(1.0, 1.0, 3, Color("#6fa8dc"))
-	_shield_bar.position = Vector2(CHAR_X - 27.0, GROUND_Y - 2.0)
-	_shield_bar.size = Vector2(54, 3)
-	_shield_bar.show_percentage = false
+	_shield_bar = _make_shield_overlay(1.0, 1.0, 6)
+	_shield_bar.position = Vector2(CHAR_X - 27.0, GROUND_Y + 2.0)
+	_shield_bar.size = Vector2(54, 6)
 	_shield_bar.visible = false
 	add_child(_shield_bar)
 	_update_player_bar()
@@ -487,6 +486,23 @@ func _clash(root: Node2D, battle: Dictionary, label: String) -> void:
 	await _wait(0.12)
 
 
+func _make_shield_overlay(value: float, max_value: float, height: int) -> ProgressBar:
+	var b := UiKit.progress(value, max_value, height, Color(0.62, 0.84, 1.0, 0.58))
+	b.show_percentage = false
+	b.z_index = 2
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0, 0, 0, 0)
+	bg.set_border_width_all(0)
+	b.add_theme_stylebox_override("background", bg)
+	var f := StyleBoxFlat.new()
+	f.bg_color = Color(0.62, 0.84, 1.0, 0.58)
+	f.border_color = Color(0.92, 0.98, 1.0, 0.85)
+	f.set_border_width_all(0)
+	f.border_width_top = 1
+	b.add_theme_stylebox_override("fill", f)
+	return b
+
+
 func set_party_members(members: Array) -> void:
 	_party_members = members
 	if _team_active:
@@ -496,21 +512,22 @@ func set_party_members(members: Array) -> void:
 		return
 	var sorted := members.duplicate()
 	sorted.sort_custom(func(a, b): return int(a.get("position", 1)) < int(b.get("position", 1)))
+	var gap := clampf(190.0 / maxf(1.0, float(sorted.size() - 1)), 52.0, 68.0)
 	var idx := 0
 	for m in sorted:
 		var id := int(m.get("id", 0))
 		if id == Net.local_id:
 			continue
 		var spr := _make_char_sprite(String(m.get("character_id", "warrior")))
-		var x := CHAR_X - 30.0 * float(idx + 1)
+		var x := clampf(CHAR_X - gap * float(idx + 1), 400.0, CHAR_X - gap)
 		spr.position = Vector2(x, GROUND_Y - CHAR_SIZE * 0.5)
 		spr.set_meta("party_id", id)
 		add_child(spr)
 		var label := UiKit.label(String(m.get("name", "队友")), 10, Color("#cfe3ff"))
 		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 		label.add_theme_constant_override("outline_size", 3)
-		label.position = Vector2(x - 40, GROUND_Y - CHAR_SIZE - 24)
-		label.size = Vector2(80, 16)
+		label.position = Vector2(x - 32, GROUND_Y - CHAR_SIZE - 24)
+		label.size = Vector2(64, 16)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		add_child(label)
 		_party_sprites[str(id)] = {"sprite": spr, "label": label}
@@ -585,12 +602,13 @@ func start_team_battle(result: Dictionary) -> void:
 	for v in _party_sprites.values():
 		if is_instance_valid(v.get("label")):
 			v["label"].visible = false
+	var gap := clampf(190.0 / maxf(1.0, float(members.size() - 1)), 54.0, 68.0)
 	for i in members.size():
 		var m: Dictionary = members[i]
 		var id := int(m.get("id", 0))
 		var stats: Dictionary = m.get("stats", {})
 		var hp_max := maxf(1.0, float(stats.get("hp_max", 1.0)))
-		var x := clampf(CHAR_X - 34.0 * float(i), 405.0, CHAR_X)
+		var x := clampf(CHAR_X - gap * float(i), 400.0, CHAR_X)
 		var spr: AnimatedSprite2D
 		if id == local_id and _character != null:
 			spr = _character
@@ -614,16 +632,17 @@ func start_team_battle(result: Dictionary) -> void:
 			bar = _player_bar
 			shield_bar = _shield_bar
 			bar.position = Vector2(x - 27.0, GROUND_Y + 2.0)
-			shield_bar.position = Vector2(x - 27.0, GROUND_Y - 2.0)
+			shield_bar.position = bar.position
+			shield_bar.size = bar.size
 		else:
 			bar = UiKit.progress(hp_max, hp_max, 5, Color("#63c76a"))
 			bar.position = Vector2(x - 27.0, GROUND_Y + 2.0)
 			bar.size = Vector2(54, 5)
 			bar.show_percentage = false
 			add_child(bar)
-			shield_bar = UiKit.progress(0.0, hp_max, 3, Color("#6fa8dc"))
-			shield_bar.position = Vector2(x - 27.0, GROUND_Y - 2.0)
-			shield_bar.size = Vector2(54, 3)
+			shield_bar = _make_shield_overlay(0.0, hp_max, 5)
+			shield_bar.position = bar.position
+			shield_bar.size = Vector2(54, 5)
 			add_child(shield_bar)
 		bar.max_value = hp_max
 		bar.value = hp_max
@@ -740,7 +759,8 @@ func start_team_battle(result: Dictionary) -> void:
 		_player_bar.position = Vector2(CHAR_X - 27.0, GROUND_Y + 2.0)
 		_player_bar.visible = false
 	if _shield_bar != null:
-		_shield_bar.position = Vector2(CHAR_X - 27.0, GROUND_Y - 2.0)
+		_shield_bar.position = Vector2(CHAR_X - 27.0, GROUND_Y + 2.0)
+		_shield_bar.size = Vector2(54, 6)
 		_shield_bar.visible = false
 	_team_active = false
 	_busy = false
