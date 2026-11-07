@@ -564,6 +564,10 @@ func _set_character_idle(idle: bool) -> void:
 		_character.play(anim)
 
 
+func is_combat_running() -> bool:
+	return _busy or _team_active
+
+
 func start_team_battle(result: Dictionary) -> void:
 	if _team_active:
 		return

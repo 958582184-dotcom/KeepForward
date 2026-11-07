@@ -75,6 +75,10 @@ func _ready() -> void:
 		_run_infotest()
 		return
 
+	if "--monstertest" in args:
+		_run_monstertest()
+		return
+
 	if "--battletest" in args:
 		_run_battletest()
 		return
@@ -140,6 +144,9 @@ func _update_mouse_passthrough() -> void:
 	if hud == null:
 		return
 	if hud.has_open_window():
+		_set_mouse_passthrough(PackedVector2Array())
+		return
+	if world != null and world.is_combat_running():
 		_set_mouse_passthrough(PackedVector2Array())
 		return
 	_set_mouse_passthrough(_base_passthrough_polygon())
@@ -363,6 +370,17 @@ func _run_infotest() -> void:
 	await get_tree().create_timer(0.4).timeout
 	print("INFOTEST current=%s info=%s pass=%s" % [str(hud._current), str(hud._info.visible), str(_passthrough_points.size())])
 	await get_tree().create_timer(4.0).timeout
+	get_tree().quit()
+
+
+func _run_monstertest() -> void:
+	Game.new_game("warrior")
+	world.set_class("warrior")
+	await get_tree().create_timer(0.6).timeout
+	world.start_dungeon(Game.dungeons[0])
+	await get_tree().create_timer(1.5).timeout
+	print("MONSTERTEST busy=%s pass=%s" % [str(world.is_combat_running()), str(_passthrough_points.size())])
+	await get_tree().create_timer(5.0).timeout
 	get_tree().quit()
 
 
