@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.59.0"
+const VERSION := "0.60.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -270,8 +270,8 @@ const RUNE_AFFIX_KEYS := ["crit", "haste", "hit", "dodge", "parry", "block",
 const DIFF_ORDER := ["normal", "elite", "hero"]
 const DIFFICULTIES := {
 	"normal": {"name": "普通", "color": "#c8d2df", "hp": 1.00, "dmg": 1.00, "reward": 1.0, "quality_shift": 0},
-	"elite": {"name": "精英", "color": "#f0c060", "hp": 2.70, "dmg": 2.44, "reward": 1.6, "quality_shift": 1},
-	"hero": {"name": "英雄", "color": "#ff6b5e", "hp": 7.40, "dmg": 6.20, "reward": 2.4, "quality_shift": 2},
+	"elite": {"name": "精英", "color": "#f0c060", "hp": 3.45, "dmg": 3.60, "reward": 1.6, "quality_shift": 1},
+	"hero": {"name": "英雄", "color": "#ff6b5e", "hp": 4.50, "dmg": 4.80, "reward": 2.4, "quality_shift": 2},
 }
 
 const MONSTER_TYPES := {
@@ -465,6 +465,10 @@ static func equip_tier_floor(level: int) -> int:
 	if level <= 1:
 		return 1
 	return maxi(1, int(level / 5.0) * 5)
+
+
+static func normalize_equip_tier(level: int) -> int:
+	return equip_tier_floor(level)
 
 
 static func shop_equip_levels(player_level: int) -> Array[int]:

@@ -401,8 +401,6 @@ func _on_window_closed(_name: String) -> void:
 	if has_open_window():
 		return
 	_current = null
-	if not _manual_started:
-		return
 	if world != null and Game.auto_mode != "off":
 		world.resume_auto(0.8)
 

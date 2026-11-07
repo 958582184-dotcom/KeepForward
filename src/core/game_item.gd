@@ -38,6 +38,7 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 		if level % 5 != 0:
 			upper = lower + 5
 		it.req_level = lower if lower == upper or rng.randf() < 0.5 else upper
+	it.req_level = Data.normalize_equip_tier(it.req_level)
 	it.quality = clampi(q, 0, 4)
 	it.source = source_tag
 	it.slot = slot_hint if slot_hint != "" else _pick_slot(rng)
@@ -456,7 +457,7 @@ static func from_dict(d: Dictionary) -> GameItem:
 	it.item_name = String(d.get("name", "物品"))
 	it.slot = String(d.get("slot", "head"))
 	it.ilvl = int(d.get("ilvl", 1))
-	it.req_level = int(d.get("rlvl", 1))
+	it.req_level = Data.normalize_equip_tier(int(d.get("rlvl", 1)))
 	it.quality = int(d.get("q", 0))
 	it.armor_type = String(d.get("at", ""))
 	it.weapon_type = String(d.get("wt", ""))

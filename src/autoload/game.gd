@@ -1101,7 +1101,7 @@ func _roll_dungeon() -> Dictionary:
 	for lv in range(rng_range.x, rng_range.y + 1):
 		weights.append(float(rng_range.y - lv + 4))
 	var dlevel: int = rng_range.x + Data.weighted_pick(rng, weights)
-	var diff: String = Data.DIFF_ORDER[Data.weighted_pick(rng, [68, 25, 7])]
+	var diff: String = Data.DIFF_ORDER[Data.weighted_pick(rng, [88, 10, 2])]
 	return {
 		"uid": rng.randi(),
 		"zone": String(area["name"]),
