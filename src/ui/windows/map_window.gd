@@ -171,6 +171,12 @@ func _switch_area(index: int) -> void:
 
 
 func _on_node_pressed(d: Dictionary) -> void:
+	if Game.busy:
+		if Game.auto_mode == "repeat" and String(d.get("kind", "normal")) != "boss":
+			Game.current_dungeon = d.duplicate(true)
+			Game.save_game()
+			Game.toast.emit("自动重复目标：%s" % Data.dungeon_title(d), Color("#c8d2df"))
+		return
 	if String(d.get("kind", "normal")) == "boss":
 		boss_requested.emit()
 	else:
