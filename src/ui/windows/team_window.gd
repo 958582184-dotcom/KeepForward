@@ -217,7 +217,7 @@ func _build_equipment_view(box: VBoxContainer) -> void:
 	box.add_child(holder)
 	var doll := PaperDoll.new()
 	holder.add_child(doll)
-	var lv := UiKit.label("装备等级 %d" % int(_view_member.get("level", 1)), 10, UiKit.COL_GOLD)
+	var lv := UiKit.label("装备等级 %d" % int(_view_member.get("level", 1)), 10, Color("#3d2a17"))
 	lv.position = Vector2(6, 4)
 	holder.add_child(lv)
 	var eq: Dictionary = _view_member.get("equipment", {})
@@ -233,6 +233,7 @@ func _build_equipment_view(box: VBoxContainer) -> void:
 		slot.unhovered.connect(func(_s): _tip.hide_tip())
 		slot.clicked.connect(func(_s, it, _b): _show_team_item_tip(it))
 		holder.add_child(slot)
+		slot.set_paper(true)
 	_footer_left.add_child(UiKit.label("仅显示装备栏", 10, UiKit.COL_MUTED))
 
 

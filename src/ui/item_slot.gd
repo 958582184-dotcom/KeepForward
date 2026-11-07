@@ -10,6 +10,7 @@ var item: GameItem = null
 var slot_id := ""
 var inv_index := -1
 var cell := 44
+var paper := false
 var _hover := false
 var _built := false
 var _drag_started := false
@@ -82,6 +83,15 @@ func set_item(new_item: GameItem) -> void:
 		_refresh()
 
 
+func set_paper(enabled: bool) -> void:
+	paper = enabled
+	if _built:
+		_empty.add_theme_color_override("font_color", Color("#c6a46b") if paper else UiKit.COL_DIM)
+		_ilvl.add_theme_color_override("font_color", Color("#d8bc86") if paper else UiKit.COL_MUTED)
+		_lock.add_theme_color_override("font_color", Color("#f0c976") if paper else UiKit.COL_GOLD)
+		queue_redraw()
+
+
 func _refresh() -> void:
 	if _icon == null:
 		return
@@ -99,15 +109,25 @@ func _refresh() -> void:
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	var bg := Color(0.063, 0.078, 0.106, 0.96)
+	if paper:
+		bg = Color(0.175, 0.125, 0.080, 0.96)
 	if item != null:
 		bg = bg.lerp(item.quality_color(), 0.13)
 	if _hover:
 		bg = bg.lerp(Color(1, 1, 1), 0.07)
 	draw_rect(r, bg)
 	var border := Color(0.176, 0.212, 0.263)
+	if paper:
+		border = Color(0.58, 0.43, 0.24)
 	if item != null:
 		border = item.quality_color()
 	draw_rect(Rect2(Vector2(1, 1), size - Vector2(2, 2)), border, false, 2.0)
+	if paper:
+		draw_rect(Rect2(Vector2(4, 4), size - Vector2(8, 8)), Color(0.78, 0.60, 0.34, 0.22), false, 1.0)
+		draw_circle(Vector2(5, 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
+		draw_circle(Vector2(size.x - 5, 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
+		draw_circle(Vector2(5, size.y - 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
+		draw_circle(Vector2(size.x - 5, size.y - 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
 	if item != null:
 		draw_rect(Rect2(3, 3, size.x - 6, 2), border)
 

@@ -4,20 +4,20 @@ extends BaseWindow
 const EQ_CELL := 50
 const INV_CELL := 36
 const EQ_POS := {
-	"head": Vector2(140, 16),
-	"neck": Vector2(230, 16),
-	"main": Vector2(50, 86),
-	"chest": Vector2(140, 86),
-	"off": Vector2(230, 86),
-	"hands": Vector2(50, 156),
-	"legs": Vector2(140, 156),
-	"ring1": Vector2(230, 156),
-	"trinket": Vector2(50, 226),
-	"feet": Vector2(140, 226),
-	"ring2": Vector2(230, 226),
-	"rune1": Vector2(300, 86),
-	"rune2": Vector2(300, 156),
-	"rune3": Vector2(300, 226),
+	"main": Vector2(150, 8),
+	"head": Vector2(10, 20),
+	"neck": Vector2(10, 80),
+	"chest": Vector2(10, 140),
+	"hands": Vector2(10, 200),
+	"legs": Vector2(10, 260),
+	"off": Vector2(290, 20),
+	"ring1": Vector2(290, 80),
+	"ring2": Vector2(290, 140),
+	"trinket": Vector2(290, 200),
+	"feet": Vector2(290, 260),
+	"rune1": Vector2(90, 270),
+	"rune2": Vector2(150, 270),
+	"rune3": Vector2(210, 270),
 }
 
 var _tip: ItemTooltip
@@ -73,7 +73,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	var doll := PaperDoll.new()
 	doll.custom_minimum_size = Vector2(350, 320)
 	left.add_child(doll)
-	var equip_lv := UiKit.label("装备等级 %d" % int(Game.compute_stats().get("ilvl", 1)), 11, UiKit.COL_GOLD)
+	var equip_lv := UiKit.label("装备等级 %d" % int(Game.compute_stats().get("ilvl", 1)), 11, Color("#3d2a17"))
 	equip_lv.position = Vector2(6, 4)
 	doll.add_child(equip_lv)
 	var toggle := UiKit.button("◀" if _stats_open else "▶", 12)
@@ -104,6 +104,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 		slot.unhovered.connect(_on_slot_unhovered)
 		slot.dropped.connect(_on_item_dropped)
 		doll.add_child(slot)
+		slot.set_paper(true)
 
 	var inv_head := HBoxContainer.new()
 	inv_head.custom_minimum_size = Vector2(350, 22)
