@@ -3,6 +3,7 @@ extends Node
 signal party_changed
 signal rooms_changed
 signal notice(text, color)
+signal join_failed(reason: String)
 signal team_battle(result)
 
 var is_host := false
@@ -17,6 +18,8 @@ var team_dungeon: Dictionary = {}
 var _password := ""
 var _pending_password := ""
 var _pending_join := false
+var _join_ip := ""
+var _join_elapsed := 0.0
 var _peer: ENetMultiplayerPeer
 var _discovery_listener: PacketPeerUDP
 var _discovery_sender: PacketPeerUDP
@@ -40,6 +43,13 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_discovery_t += delta
 	_profile_t += delta
+	if _pending_join:
+		_join_elapsed += delta
+		if _join_elapsed >= 8.0:
+			var ip := _join_ip
+			_pending_join = false
+			_close_network()
+			_fail_join("连接 %s:%d 超时。请确认房主已创建房间、IP 正确，且房主防火墙允许 UDP %d 入站。" % [ip, Data.TEAM_PORT, Data.TEAM_PORT])
 	if in_party and _profile_t >= 1.0:
 		_profile_t = 0.0
 		if _profile_dirty:
@@ -95,10 +105,13 @@ func join_room(ip: String, password: String = "") -> bool:
 		leave_party()
 	_pending_password = password
 	_pending_join = true
+	_join_ip = ip.strip_edges()
+	_join_elapsed = 0.0
 	var peer := ENetMultiplayerPeer.new()
 	var err := peer.create_client(ip.strip_edges(), Data.TEAM_PORT)
 	if err != OK:
-		notice.emit("加入失败：%s" % err, Color("#ff7b6e"))
+		_pending_join = false
+		_fail_join("无法创建连接（错误码 %d）。请检查 IP 格式和端口 %d。" % [err, Data.TEAM_PORT])
 		return false
 	_peer = peer
 	multiplayer.multiplayer_peer = peer
@@ -127,6 +140,8 @@ func _close_network() -> void:
 	team_dungeon = {}
 	_password = ""
 	_pending_join = false
+	_join_ip = ""
+	_join_elapsed = 0.0
 	if _peer != null:
 		_peer.close()
 		_peer = null
@@ -285,10 +300,12 @@ func rpc_request_join(password: String, profile: Dictionary) -> void:
 @rpc("authority", "call_remote", "reliable")
 func rpc_join_result(ok: bool, reason: String, remote_members: Array, name: String, lead: int) -> void:
 	if not ok:
-		notice.emit("加入失败：%s" % reason, Color("#ff7b6e"))
+		_fail_join("加入失败：%s" % reason)
 		_close_network()
 		return
 	_pending_join = false
+	_join_ip = ""
+	_join_elapsed = 0.0
 	in_party = true
 	is_host = false
 	local_id = multiplayer.get_unique_id()
@@ -357,10 +374,16 @@ func _on_connected_to_server() -> void:
 	rpc_id(1, "rpc_request_join", _pending_password, Game.profile_snapshot())
 
 
+func _fail_join(reason: String) -> void:
+	notice.emit(reason, Color("#ff7b6e"))
+	join_failed.emit(reason)
+
+
 func _on_connection_failed() -> void:
+	var ip := _join_ip
 	_pending_join = false
 	_close_network()
-	notice.emit("连接失败，请检查 IP、防火墙和端口", Color("#ff7b6e"))
+	_fail_join("无法连接 %s:%d。请确认房主已创建房间、两台电脑在同一局域网，并允许房主防火墙的 UDP %d 入站。" % [ip, Data.TEAM_PORT, Data.TEAM_PORT])
 
 
 func _on_server_disconnected() -> void:

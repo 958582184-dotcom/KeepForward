@@ -15,6 +15,8 @@ var _button_icons: Dictionary = {}
 var _windows: Dictionary = {}
 var _current: BaseWindow = null
 var _manual_started := false
+var _modal: Control
+var _modal_open := false
 
 var _bag: BackpackWindow
 var _dungeon: MapWindow
@@ -177,6 +179,7 @@ func _connect_game() -> void:
 	Game.toast.connect(add_log)
 	Game.busy_changed.connect(_on_busy_changed)
 	Net.notice.connect(add_log)
+	Net.join_failed.connect(_show_join_failed)
 	Net.party_changed.connect(_on_party_changed)
 	Net.team_battle.connect(_on_team_battle)
 	if world != null and world.has_signal("team_battle_finished"):
@@ -323,11 +326,66 @@ func close_current() -> void:
 
 
 func has_open_window() -> bool:
+	if _modal_open:
+		return true
 	for key in _windows:
 		var w: BaseWindow = _windows[key]
 		if w != null and w.visible:
 			return true
 	return false
+
+
+func _show_join_failed(reason: String) -> void:
+	_close_modal()
+	_modal_open = true
+	_modal = Control.new()
+	_modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_modal.z_index = 120
+	_modal.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_modal)
+	var dim := ColorRect.new()
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.68)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_modal.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_modal.add_child(center)
+	var panel := UiKit.panel(UiKit.COL_PANEL, UiKit.COL_GOLD_DIM, 2, 14)
+	panel.custom_minimum_size = Vector2(620, 0)
+	center.add_child(panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	panel.add_child(v)
+	v.add_child(UiKit.label("加入队伍失败", 17, UiKit.COL_RED))
+	var msg := UiKit.label(reason, 12, UiKit.COL_TEXT)
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	msg.custom_minimum_size = Vector2(590, 0)
+	v.add_child(msg)
+	v.add_child(UiKit.hsep())
+	var hint := UiKit.label(
+		"排查建议：\n• 确认房主已经创建房间，端口为 45872\n• 两台电脑在同一局域网，且未开启 AP 隔离\n• 房主防火墙允许 UDP 45872 入站\n• 自动搜索还需要允许 UDP 45871 入站\n• 可临时关闭防火墙或用手机热点测试\n• 实在无法自动发现时，手动输入房主 IP 仍是可靠备用方案",
+		10, UiKit.COL_MUTED)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size = Vector2(590, 0)
+	v.add_child(hint)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_END
+	var ok := UiKit.button("知道了", 12)
+	ok.pressed.connect(_close_modal)
+	row.add_child(ok)
+	v.add_child(row)
+	window_changed.emit()
+
+
+func _close_modal() -> void:
+	if _modal != null:
+		_modal.queue_free()
+		_modal = null
+	if _modal_open:
+		_modal_open = false
+		window_changed.emit()
 
 func refresh_dungeon() -> void:
 	if _dungeon != null and _dungeon.visible:
