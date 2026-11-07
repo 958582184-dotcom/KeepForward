@@ -217,7 +217,7 @@ func _build_equipment_view(box: VBoxContainer) -> void:
 	box.add_child(holder)
 	var doll := PaperDoll.new()
 	holder.add_child(doll)
-	var lv := UiKit.label("装备等级 %d" % int(_view_member.get("level", 1)), 11, Color("#3d2a17"))
+	var lv := UiKit.label("装备等级 %d" % int(_view_member.get("ilvl", _view_member.get("level", 1))), 11, Color("#3d2a17"))
 	lv.position = Vector2(6, 4)
 	holder.add_child(lv)
 	var eq: Dictionary = _view_member.get("equipment", {})

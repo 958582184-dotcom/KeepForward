@@ -278,7 +278,7 @@ func _run_dungeon(d: Dictionary) -> bool:
 		_set_player_hp(_combat_hp, _combat_hp_max, true)
 		if not is_boss:
 			Game.add_exploration(float(Data.EXPLORE_CLEAR_GAIN.get(String(d["difficulty"]), 1.0)))
-		var loot := Game.grant_dungeon_loot(base_level)
+		var loot := Game.grant_dungeon_loot(base_level, String(d["difficulty"]))
 		var loot_names: Array = []
 		for it in loot:
 			loot_names.append(it.item_name)
@@ -585,6 +585,13 @@ func is_combat_running() -> bool:
 	return _busy or _team_active
 
 
+func show_level_up(level: int) -> void:
+	var pos := Vector2(CHAR_X, GROUND_Y - 96)
+	if _character != null:
+		pos = _character.position + Vector2(0, -58)
+	_floating_text(pos, "升级！Lv.%d" % level, Color("#ffd76a"), 16)
+
+
 func start_team_battle(result: Dictionary) -> void:
 	if _team_active:
 		return
@@ -683,11 +690,12 @@ func start_team_battle(result: Dictionary) -> void:
 				bar.value = float(turn.get("enemy_hp", bar.value))
 				var actor: AnimatedSprite2D = _team_sprites.get(aid)
 				if actor != null:
-					_floating_text(actor.position + Vector2(0, -52), "-%d" % dmg, Color(1.0, 0.86, 0.52), 12)
-					_spawn_slash(root.position + Vector2(_rng.randf_range(-18, 18), -50))
 					actor.modulate = Color(1.7, 1.7, 1.7)
 					await _wait(0.10)
 					actor.modulate = Color.WHITE
+				_floating_text(root.position + Vector2(_rng.randf_range(-22, 22), -72),
+					str(dmg), Color(1.0, 0.86, 0.52), 12)
+				_spawn_slash(root.position + Vector2(_rng.randf_range(-18, 18), -50))
 				_set_team_hp(aid, float(turn.get("actor_hp", 0)))
 				_set_team_shield(aid, float(turn.get("actor_shield", 0)))
 				var sid := str(int(turn.get("shield_id", 0)))

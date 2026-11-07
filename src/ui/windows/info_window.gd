@@ -2,6 +2,7 @@ class_name InfoWindow
 extends BaseWindow
 
 var _scroll: ScrollContainer
+var _refresh_queued := false
 
 
 func _init() -> void:
@@ -19,6 +20,11 @@ func _after_build() -> void:
 
 
 func _on_log_added(_text: String, _color: Color) -> void:
+	if not visible or _refresh_queued:
+		return
+	_refresh_queued = true
+	await get_tree().create_timer(0.18).timeout
+	_refresh_queued = false
 	if visible:
 		refresh()
 

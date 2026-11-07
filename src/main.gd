@@ -79,6 +79,10 @@ func _ready() -> void:
 		_run_monstertest()
 		return
 
+	if "--teambalancetest" in args:
+		_run_teambalancetest()
+		return
+
 	if "--battletest" in args:
 		_run_battletest()
 		return
@@ -388,6 +392,33 @@ func _run_monstertest() -> void:
 	await get_tree().create_timer(1.5).timeout
 	print("MONSTERTEST busy=%s pass=%s" % [str(world.is_combat_running()), str(_passthrough_points.size())])
 	await get_tree().create_timer(5.0).timeout
+	get_tree().quit()
+
+
+func _run_teambalancetest() -> void:
+	Game.new_game("warrior")
+	for lv in [8, 11]:
+		for quality in [1, 4]:
+			Game.level = lv
+			Game.equipment.clear()
+			for key in Data.EQUIP_ORDER:
+				Game.equipment[key] = null
+			for slot in ["main", "chest", "legs", "feet"]:
+				Game.equipment[slot] = GameItem.create(Game.rng, lv, quality, "warrior", slot, "test")
+			var p1: Dictionary = Game.profile_snapshot()
+			p1["id"] = 1
+			p1["position"] = 1
+			p1["is_leader"] = true
+			var p2: Dictionary = p1.duplicate(true)
+			p2["id"] = 2
+			p2["position"] = 2
+			p2["is_leader"] = false
+			var target_level := 17 if lv == 8 else 30
+			var d := {"level": target_level, "difficulty": "normal", "kind": "normal",
+				"monsters": ["normal", "normal", "normal", "elite"]}
+			var result := TeamBattle.build(d, [p1, p2], Game.rng, lv)
+			print("TEAMBALANCE lv=%d q=%d dungeon=%d win=%s" % [
+				lv, quality, target_level, str(result.get("win", false))])
 	get_tree().quit()
 
 

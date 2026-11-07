@@ -557,6 +557,8 @@ func set_area(index: int) -> bool:
 
 func push_log(text: String, color: Color = Color("#c8d2df")) -> void:
 	log_history.append({"text": text, "color": color})
+	if log_history.size() > 250:
+		log_history.pop_front()
 	log_added.emit(text, color)
 
 
@@ -736,6 +738,26 @@ func sell_item(item: GameItem) -> void:
 	toast.emit("出售 %s  +%d 金币" % [item.item_name, value], Color("#e0b45a"))
 
 
+func sell_all_unlocked() -> void:
+	var count := 0
+	var total := 0
+	for i in inventory.size():
+		var it: GameItem = inventory[i]
+		if it == null or it.locked:
+			continue
+		total += it.sell_value()
+		inventory[i] = null
+		count += 1
+	if count == 0:
+		toast.emit("没有可出售的未锁定背包装备", Color("#c8d2df"))
+		return
+	gold += total
+	inventory_changed.emit()
+	gold_changed.emit()
+	_dirty = true
+	toast.emit("一键出售 %d 件装备  +%d 金币" % [count, total], Color("#e0b45a"))
+
+
 func dismantle_item(item: GameItem) -> void:
 	if item == null:
 		return
@@ -863,11 +885,12 @@ func grant_kill(mon: Dictionary, diff: String) -> Dictionary:
 	return {"exp": exp_gain, "gold": gold_gain, "drops": [], "explore": 0.0}
 
 
-func grant_dungeon_loot(level: int) -> Array:
+func grant_dungeon_loot(level: int, diff: String = "normal") -> Array:
 	var count := Data.weighted_pick(rng, Data.DUNGEON_DROP_COUNT_WEIGHTS)
 	var drops: Array = []
+	var shift := Data.dungeon_quality_shift(level, self.level, diff)
 	for i in count:
-		var q := Data.roll_quality(rng, Data.DUNGEON_QUALITY_WEIGHTS, 0)
+		var q := Data.roll_quality(rng, Data.DUNGEON_QUALITY_WEIGHTS, shift)
 		var drop := GameItem.create_dungeon_drop(rng, level, q, class_id)
 		receive_drop(drop)
 		drops.append(drop)
@@ -890,6 +913,7 @@ func profile_snapshot() -> Dictionary:
 		"class_id": String(ch.get("archetype", "warrior")),
 		"level": level,
 		"stats": st.duplicate(true),
+		"ilvl": int(st.get("ilvl", 1)),
 		"equipment": eq,
 		"school": String(main_item.style) if main_item != null else "",
 		"weapon_ilvl": int(main_item.ilvl) if main_item != null else 1,
@@ -925,9 +949,9 @@ func build_battle(mon: Dictionary, diff: String, start_hp: float = -1.0) -> Dict
 	var type_id: String = mon["type"]
 	var total_hp := Data.monster_hp(type_id, mon_level, diff)
 	var mon_dmg := Data.monster_damage(type_id, mon_level, diff)
-	var level_gap := clampi(mon_level - level, 0, 6)
-	total_hp *= 1.0 + 0.08 * float(level_gap)
-	mon_dmg *= 1.0 + 0.06 * float(level_gap)
+	var gap_mult := Data.level_gap_multipliers(level, mon_level)
+	total_hp *= gap_mult.x
+	mon_dmg *= gap_mult.y
 	var mon_armor := Data.monster_armor(mon_level)
 	var eff_armor := mon_armor * (1.0 - float(s["pen_pct"]))
 	var armor_mit := eff_armor / (eff_armor + 90.0 + 12.0 * mon_level)

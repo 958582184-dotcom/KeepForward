@@ -13,6 +13,10 @@ static func build(dungeon: Dictionary, members: Array, rng: RandomNumberGenerato
 		profiles[i]["position"] = i + 1
 
 	var n := profiles.size()
+	var party_level := 0
+	for p in profiles:
+		party_level += int(p.get("level", 1))
+	party_level = int(round(float(party_level) / maxf(1.0, float(n))))
 	var combatants := {}
 	var order: Array = []
 	for p in profiles:
@@ -38,11 +42,11 @@ static func build(dungeon: Dictionary, members: Array, rng: RandomNumberGenerato
 			break
 		var mon_level := int(dungeon.get("level", 1))
 		var diff := String(dungeon.get("difficulty", "normal"))
-		var gap := clampi(mon_level - leader_level, 0, 6)
+		var gap_mult := Data.level_gap_multipliers(party_level, mon_level)
 		var total_hp := Data.monster_hp(String(type_id), mon_level, diff) * float(n) \
-			* Data.TEAM_ENEMY_HP_SCALE * (1.0 + 0.08 * float(gap))
+			* Data.TEAM_ENEMY_HP_SCALE * gap_mult.x
 		var mon_dmg := Data.monster_damage(String(type_id), mon_level, diff) * float(n) \
-			* Data.TEAM_ENEMY_ATTACK_SCALE * (1.0 + 0.06 * float(gap))
+			* Data.TEAM_ENEMY_ATTACK_SCALE * gap_mult.y
 		var mon_armor := Data.monster_armor(mon_level)
 		for c in combatants.values():
 			c["shield"] = 0.0
@@ -194,8 +198,9 @@ static func _build_rewards(dungeon: Dictionary, profiles: Array, rng: RandomNumb
 			exp_gain += e
 		var items: Array = []
 		var count := Data.weighted_pick(rng, Data.DUNGEON_DROP_COUNT_WEIGHTS)
+		var shift := Data.dungeon_quality_shift(mon_level, plevel, diff)
 		for i in count:
-			var q := Data.roll_quality(rng, Data.DUNGEON_QUALITY_WEIGHTS, 0)
+			var q := Data.roll_quality(rng, Data.DUNGEON_QUALITY_WEIGHTS, shift)
 			var drop := GameItem.create_dungeon_drop(rng, mon_level, q, String(p.get("character_id", "warrior")))
 			items.append(drop.to_dict())
 		var explore := 0.0

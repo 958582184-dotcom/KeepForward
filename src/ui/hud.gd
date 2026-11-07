@@ -178,6 +178,7 @@ func _connect_game() -> void:
 	Game.auto_mode_changed.connect(func(_m): update_badges())
 	Game.toast.connect(add_log)
 	Game.busy_changed.connect(_on_busy_changed)
+	Game.level_up.connect(_on_level_up)
 	Net.notice.connect(add_log)
 	Net.join_failed.connect(_show_join_failed)
 	Net.party_changed.connect(_on_party_changed)
@@ -256,10 +257,13 @@ func _on_state_changed() -> void:
 		_bag.refresh()
 	if _shop != null and _shop.visible:
 		_shop.refresh()
-	if _info != null and _info.visible:
-		_info.refresh()
 	if _stats != null and _stats.visible:
 		_stats.refresh()
+
+
+func _on_level_up(level: int) -> void:
+	if world != null and world.has_method("show_level_up"):
+		world.show_level_up(level)
 
 
 func _on_dungeons_changed() -> void:

@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.57.0"
+const VERSION := "0.58.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -446,6 +446,21 @@ static func weighted_pick(rng: RandomNumberGenerator, weights: Array) -> int:
 static func roll_quality(rng: RandomNumberGenerator, weights: Array, shift: int) -> int:
 	var q := weighted_pick(rng, weights)
 	return clampi(q + shift, 0, 4)
+
+
+static func level_gap_multipliers(party_level: int, mon_level: int) -> Vector2:
+	var gap := maxi(0, mon_level - party_level)
+	var tier := int(gap / 5.0)
+	var hp_mult := 1.0 + 0.12 * float(gap) + 0.55 * float(tier)
+	var dmg_mult := 1.0 + 0.10 * float(gap) + 0.45 * float(tier)
+	return Vector2(hp_mult, dmg_mult)
+
+
+static func dungeon_quality_shift(mon_level: int, player_level: int, diff: String) -> int:
+	var d: Dictionary = DIFFICULTIES.get(diff, DIFFICULTIES["normal"])
+	var level_bonus := mini(2, int(mon_level / 10.0))
+	var gap_bonus := 1 if mon_level - player_level >= 5 else 0
+	return clampi(int(d.get("quality_shift", 0)) + level_bonus + gap_bonus, 0, 4)
 
 
 static func monster_display_name(type_id: String, level: int) -> String:
