@@ -115,13 +115,20 @@ func set_class(cid: String) -> void:
 		else:
 			at.region = Rect2(48, i * 16, 16, 16)
 		sf.add_frame("run", at)
+	sf.add_animation("idle")
+	sf.set_animation_speed("idle", 1.0)
+	sf.set_animation_loop("idle", true)
+	var idle_at := AtlasTexture.new()
+	idle_at.atlas = tex
+	idle_at.region = Rect2(0, 0, frame_w, frame_h)
+	sf.add_frame("idle", idle_at)
 
 	_character = AnimatedSprite2D.new()
 	_character.sprite_frames = sf
 	_character.position = Vector2(CHAR_X, GROUND_Y - CHAR_SIZE * 0.5)
 	_character.scale = Vector2(CHAR_SIZE / float(frame_h), CHAR_SIZE / float(frame_h))
 	_character.modulate = Color(String(ch.get("tint", "#ffffff")))
-	_character.play("run")
+	_character.play("idle")
 	add_child(_character)
 
 	_char_shadow = Sprite2D.new()
@@ -154,6 +161,7 @@ func start_dungeon(d: Dictionary) -> void:
 		return
 	_auto_token += 1
 	_busy = true
+	_set_character_idle(false)
 	Game.current_dungeon = d
 	Game.set_busy(true)
 	var title := Data.dungeon_title(d)
@@ -179,6 +187,7 @@ func start_dungeon(d: Dictionary) -> void:
 		hud.clear_stage()
 	_busy = false
 	Game.set_busy(false)
+	_set_character_idle(true)
 	Game.save_game()
 
 	if not cleared:
@@ -532,12 +541,27 @@ func _make_char_sprite(cid: String) -> AnimatedSprite2D:
 		at.atlas = tex
 		at.region = Rect2(48, i * 16, 16, 16)
 		sf.add_frame("run", at)
+	sf.add_animation("idle")
+	sf.set_animation_speed("idle", 1.0)
+	sf.set_animation_loop("idle", true)
+	var idle_at := AtlasTexture.new()
+	idle_at.atlas = tex
+	idle_at.region = Rect2(0, 0, 16, 16)
+	sf.add_frame("idle", idle_at)
 	var spr := AnimatedSprite2D.new()
 	spr.sprite_frames = sf
 	spr.scale = Vector2(CHAR_SIZE / float(frame_h), CHAR_SIZE / float(frame_h))
 	spr.modulate = Color(String(ch.get("tint", "#ffffff")))
-	spr.play("run")
+	spr.play("idle")
 	return spr
+
+
+func _set_character_idle(idle: bool) -> void:
+	if _character == null:
+		return
+	var anim := "idle" if idle else "run"
+	if _character.animation != anim:
+		_character.play(anim)
 
 
 func start_team_battle(result: Dictionary) -> void:
@@ -545,6 +569,7 @@ func start_team_battle(result: Dictionary) -> void:
 		return
 	_team_active = true
 	_busy = true
+	_set_character_idle(false)
 	Game.set_busy(true)
 	var members: Array = result.get("members", [])
 	members.sort_custom(func(a, b): return int(a.get("position", 1)) < int(b.get("position", 1)))
@@ -577,6 +602,7 @@ func start_team_battle(result: Dictionary) -> void:
 		spr.position = Vector2(x, GROUND_Y - CHAR_SIZE * 0.5)
 		spr.visible = true
 		spr.modulate = Color.WHITE
+		spr.play("run")
 		sprites[str(id)] = spr
 		var bar: ProgressBar
 		var shield_bar: ProgressBar
@@ -716,6 +742,7 @@ func start_team_battle(result: Dictionary) -> void:
 	_busy = false
 	Game.set_busy(false)
 	set_party_members(Net.members)
+	_set_character_idle(true)
 	team_battle_finished.emit(win)
 	await _wait(0.15)
 
