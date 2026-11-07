@@ -68,6 +68,8 @@ func _ready() -> void:
 	_clear_equipment()
 	_migrate_old_save()
 	_recover_backup_if_needed()
+	if save_path == Data.SAVE_PATH:
+		_backup_current_save()
 	loaded = load_game()
 	if loaded:
 		refresh_dungeons(false)
