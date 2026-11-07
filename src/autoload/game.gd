@@ -57,9 +57,14 @@ var metrics := {
 
 var _dirty := false
 var _autosave_t := 0.0
+var save_path := Data.SAVE_PATH
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--"):
+			save_path = "user://test_save.json"
+			break
 	rng.randomize()
 	inventory.resize(Data.INVENTORY_SIZE)
 	_clear_equipment()
@@ -85,7 +90,9 @@ func _process(delta: float) -> void:
 # ---------- 新游戏 / 存档 ----------
 
 func _migrate_old_save() -> void:
-	if FileAccess.file_exists(Data.SAVE_PATH):
+	if save_path != Data.SAVE_PATH:
+		return
+	if FileAccess.file_exists(save_path):
 		return
 	var base := OS.get_user_data_dir()
 	var old_path := base.get_base_dir().path_join("余烬行者").path_join("ember_walker_save.json")
@@ -95,7 +102,7 @@ func _migrate_old_save() -> void:
 	if text.is_empty():
 		return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://"))
-	var f := FileAccess.open(Data.SAVE_PATH, FileAccess.WRITE)
+	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f == null:
 		return
 	f.store_string(text)
@@ -103,7 +110,7 @@ func _migrate_old_save() -> void:
 
 
 func has_save() -> bool:
-	return FileAccess.file_exists(Data.SAVE_PATH)
+	return FileAccess.file_exists(save_path)
 
 
 func new_game(cid: String) -> void:
@@ -182,7 +189,7 @@ func save_game() -> void:
 		"shop_reset": shop_reset_at,
 		"shop": _shop_to_array(),
 	}
-	var f := FileAccess.open(Data.SAVE_PATH, FileAccess.WRITE)
+	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f == null:
 		return
 	f.store_string(JSON.stringify(payload))
@@ -199,9 +206,9 @@ func _shop_to_array() -> Array:
 
 
 func load_game() -> bool:
-	if not FileAccess.file_exists(Data.SAVE_PATH):
+	if not FileAccess.file_exists(save_path):
 		return false
-	var f := FileAccess.open(Data.SAVE_PATH, FileAccess.READ)
+	var f := FileAccess.open(save_path, FileAccess.READ)
 	if f == null:
 		return false
 	var text := f.get_as_text()
@@ -289,8 +296,8 @@ func reset_all() -> void:
 	class_id = ""
 	loaded = false
 	_dirty = false
-	var abs_path := ProjectSettings.globalize_path(Data.SAVE_PATH)
-	if FileAccess.file_exists(Data.SAVE_PATH):
+	var abs_path := ProjectSettings.globalize_path(save_path)
+	if FileAccess.file_exists(save_path):
 		DirAccess.remove_absolute(abs_path)
 	get_tree().reload_current_scene()
 
