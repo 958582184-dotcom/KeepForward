@@ -53,9 +53,9 @@ func _build_bottom() -> void:
 		["bag", "bag_2x", "背包（B）", "bag"],
 		["dungeon", "map_2x", "副本（M）", "dungeon"],
 		["shop", "shop_2x", "商店（S）", "shop"],
-		["info", "info_32", "信息（I）", "info"],
-		["stats", "chart_32", "统计", "stats"],
 		["team", "team_32", "组队（T）", "team"],
+		["stats", "chart_32", "统计", "stats"],
+		["info", "info_32", "信息（I）", "info"],
 		["more", "dots_2x", "设置", "more"],
 	]
 	for d in defs:
