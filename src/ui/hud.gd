@@ -84,7 +84,7 @@ func _build_bottom() -> void:
 		if key == "team":
 			_team_badge = PanelContainer.new()
 			_team_badge.add_theme_stylebox_override("panel",
-				UiKit.stylebox(Color(0.035, 0.043, 0.063, 0.98), UiKit.COL_GOLD, 1, 0))
+				UiKit.stylebox(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, 0))
 			_team_badge.custom_minimum_size = Vector2(16, 14)
 			_team_badge.size = Vector2(16, 14)
 			_team_badge.position = Vector2(23, 25)
@@ -93,6 +93,8 @@ func _build_bottom() -> void:
 			_team_badge_label = UiKit.label("", 8, UiKit.COL_GOLD)
 			_team_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			_team_badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			_team_badge_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+			_team_badge_label.add_theme_constant_override("outline_size", 2)
 			_team_badge_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			_team_badge.add_child(_team_badge_label)
 			btn.add_child(_team_badge)
@@ -107,13 +109,13 @@ func _build_bottom() -> void:
 	_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(_status_label)
 
-	_collapse_btn = UiKit.button("▾", 10)
+	_collapse_btn = UiKit.button("▾", 8)
 	_collapse_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_collapse_btn.offset_left = 406
-	_collapse_btn.offset_right = 430
-	_collapse_btn.offset_top = -72
-	_collapse_btn.offset_bottom = -56
-	_collapse_btn.custom_minimum_size = Vector2(24, 16)
+	_collapse_btn.offset_left = 398
+	_collapse_btn.offset_right = 438
+	_collapse_btn.offset_top = -76
+	_collapse_btn.offset_bottom = -64
+	_collapse_btn.custom_minimum_size = Vector2(40, 12)
 	_collapse_btn.tooltip_text = "收起底部按钮"
 	_collapse_btn.add_theme_color_override("font_color", UiKit.COL_GOLD)
 	_collapse_btn.add_theme_stylebox_override("normal",
