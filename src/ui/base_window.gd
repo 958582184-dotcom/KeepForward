@@ -70,15 +70,23 @@ func _build() -> void:
 	_footer.add_child(_footer_left)
 
 	var close_btn := UiKit.button("×", 17)
-	close_btn.custom_minimum_size = Vector2(30, 28)
+	close_btn.custom_minimum_size = Vector2(32, 30)
+	close_btn.clip_contents = false
 	close_btn.add_theme_color_override("font_color", UiKit.COL_MUTED)
-	var close_flat := UiKit.stylebox(Color(0.10, 0.12, 0.15, 0.7), Color(0, 0, 0, 0), 0, 4)
+	var close_flat := UiKit.stylebox(Color(0.10, 0.12, 0.15, 0.82), Color(0.30, 0.26, 0.20), 2, 4)
 	close_btn.add_theme_stylebox_override("normal", close_flat)
-	close_btn.add_theme_stylebox_override("hover", UiKit.stylebox(Color(0.18, 0.15, 0.12, 0.95), UiKit.COL_GOLD, 1, 4))
+	close_btn.add_theme_stylebox_override("hover", UiKit.stylebox(Color(0.18, 0.15, 0.12, 0.95), UiKit.COL_GOLD, 2, 4))
 	close_btn.add_theme_stylebox_override("pressed", close_flat)
+	close_btn.add_theme_stylebox_override("focus", close_flat)
 	close_btn.tooltip_text = "关闭"
 	close_btn.pressed.connect(close)
-	_footer.add_child(close_btn)
+	var close_margin := MarginContainer.new()
+	close_margin.add_theme_constant_override("margin_left", 6)
+	close_margin.add_theme_constant_override("margin_right", 0)
+	close_margin.add_theme_constant_override("margin_top", 0)
+	close_margin.add_theme_constant_override("margin_bottom", 0)
+	close_margin.add_child(close_btn)
+	_footer.add_child(close_margin)
 
 	for i in 4:
 		var edge := Control.new()

@@ -92,7 +92,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	toggle_frame.size = Vector2(36, 30)
 	toggle_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toggle_frame.add_theme_stylebox_override("panel",
-		UiKit.stylebox(Color(0, 0, 0, 0), Color(0.30, 0.26, 0.20), 1, 0))
+		UiKit.stylebox(Color(0, 0, 0, 0), Color(0.30, 0.26, 0.20), 2, 0))
 	doll.add_child(toggle_frame)
 	doll.add_child(toggle)
 	for key in Data.EQUIP_ORDER:
