@@ -198,6 +198,10 @@ func open() -> void:
 	t.finished.connect(_finish_open)
 
 
+func panel_rect() -> Rect2:
+	return _panel.get_global_rect()
+
+
 func _finish_open() -> void:
 	_fading = false
 
