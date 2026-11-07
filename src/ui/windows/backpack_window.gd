@@ -4,20 +4,20 @@ extends BaseWindow
 const EQ_CELL := 50
 const INV_CELL := 36
 const EQ_POS := {
-	"head": Vector2(140, 0),
-	"neck": Vector2(140, 56),
-	"main": Vector2(50, 112),
-	"chest": Vector2(140, 112),
-	"off": Vector2(230, 112),
-	"hands": Vector2(50, 168),
-	"legs": Vector2(140, 168),
-	"ring1": Vector2(230, 168),
-	"trinket": Vector2(50, 224),
-	"feet": Vector2(140, 280),
-	"ring2": Vector2(230, 224),
-	"rune1": Vector2(300, 112),
-	"rune2": Vector2(300, 168),
-	"rune3": Vector2(300, 224),
+	"head": Vector2(140, 16),
+	"neck": Vector2(230, 16),
+	"main": Vector2(50, 86),
+	"chest": Vector2(140, 86),
+	"off": Vector2(230, 86),
+	"hands": Vector2(50, 156),
+	"legs": Vector2(140, 156),
+	"ring1": Vector2(230, 156),
+	"trinket": Vector2(50, 226),
+	"feet": Vector2(140, 226),
+	"ring2": Vector2(230, 226),
+	"rune1": Vector2(300, 86),
+	"rune2": Vector2(300, 156),
+	"rune3": Vector2(300, 226),
 }
 
 var _tip: ItemTooltip
@@ -28,7 +28,7 @@ var _stats_open := true
 
 func _init() -> void:
 	title = "背包"
-	window_size = Vector2(800, 600)
+	window_size = Vector2(740, 550)
 
 
 func _after_build() -> void:
@@ -51,11 +51,11 @@ func _refresh_body(box: VBoxContainer) -> void:
 	if _menu != null:
 		_menu.hide()
 
-	_footer_left.add_child(UiKit.label("金币 %s" % UiKit.num(Game.gold), 11, UiKit.COL_GOLD))
-	_footer_left.add_child(UiKit.label("材料 %d" % Game.materials, 11, Color("#8fd3c7")))
+	_footer_left.add_child(UiKit.label("金币 %s" % UiKit.num(Game.gold), 12, UiKit.COL_GOLD))
+	_footer_left.add_child(UiKit.label("材料 %d" % Game.materials, 12, Color("#8fd3c7")))
 
 	var title_row := HBoxContainer.new()
-	title_row.add_child(UiKit.label("背包", 15, UiKit.COL_GOLD))
+	title_row.add_child(UiKit.label("背包", 16, UiKit.COL_GOLD))
 	title_row.add_child(UiKit.spacer())
 	box.add_child(title_row)
 
@@ -71,9 +71,9 @@ func _refresh_body(box: VBoxContainer) -> void:
 	main.add_child(left)
 
 	var doll := PaperDoll.new()
-	doll.custom_minimum_size = Vector2(350, 340)
+	doll.custom_minimum_size = Vector2(350, 320)
 	left.add_child(doll)
-	var equip_lv := UiKit.label("装备等级 %d" % int(Game.compute_stats().get("ilvl", 1)), 10, UiKit.COL_GOLD)
+	var equip_lv := UiKit.label("装备等级 %d" % int(Game.compute_stats().get("ilvl", 1)), 11, UiKit.COL_GOLD)
 	equip_lv.position = Vector2(6, 4)
 	doll.add_child(equip_lv)
 	var toggle := UiKit.button("◀" if _stats_open else "▶", 12)
@@ -108,17 +108,17 @@ func _refresh_body(box: VBoxContainer) -> void:
 	var inv_head := HBoxContainer.new()
 	inv_head.custom_minimum_size = Vector2(350, 22)
 	inv_head.add_theme_constant_override("separation", 5)
-	inv_head.add_child(UiKit.label("背包", 11, UiKit.COL_GOLD))
-	inv_head.add_child(UiKit.label("%d/%d" % [Game.inventory_count(), Data.INVENTORY_SIZE], 9, UiKit.COL_MUTED))
+	inv_head.add_child(UiKit.label("背包", 12, UiKit.COL_GOLD))
+	inv_head.add_child(UiKit.label("%d/%d" % [Game.inventory_count(), Data.INVENTORY_SIZE], 10, UiKit.COL_MUTED))
 	inv_head.add_child(UiKit.spacer())
-	var sort_btn := UiKit.button("整理", 9)
+	var sort_btn := UiKit.button("整理", 10)
 	sort_btn.custom_minimum_size = Vector2(34, 20)
 	sort_btn.pressed.connect(func(): Game.sort_inventory())
 	inv_head.add_child(sort_btn)
 	left.add_child(inv_head)
 
 	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(350, 140)
+	inv_scroll.custom_minimum_size = Vector2(350, 118)
 	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inv_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	left.add_child(inv_scroll)
@@ -146,7 +146,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 
 	# 右：人物 + 属性
 	var right := VBoxContainer.new()
-	right.custom_minimum_size = Vector2(400, 0)
+	right.custom_minimum_size = Vector2(340, 0)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation", 6)
 
@@ -174,7 +174,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	header.add_child(portrait)
 
 	var info := VBoxContainer.new()
-	info.custom_minimum_size = Vector2(280, 60)
+	info.custom_minimum_size = Vector2(240, 60)
 	info.add_theme_constant_override("separation", 4)
 	var char_head := HBoxContainer.new()
 	var name_pad := Control.new()
@@ -189,21 +189,21 @@ func _refresh_body(box: VBoxContainer) -> void:
 	char_head.add_child(UiKit.spacer())
 	info.add_child(char_head)
 	var exp_bar := UiKit.progress(Game.exp, Game.exp_to_next(), 6, UiKit.COL_TEAL)
-	exp_bar.custom_minimum_size = Vector2(280, 6)
-	exp_bar.size = Vector2(280, 6)
+	exp_bar.custom_minimum_size = Vector2(240, 6)
+	exp_bar.size = Vector2(240, 6)
 	exp_bar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	info.add_child(exp_bar)
 
 	var auto_row := HBoxContainer.new()
 	auto_row.add_theme_constant_override("separation", 6)
-	var auto_eq := UiKit.button("自动替换：%s" % ("开" if Game.auto_equip else "关"), 10)
-	auto_eq.custom_minimum_size = Vector2(0, 22)
+	var auto_eq := UiKit.button("自动替换：%s" % ("开" if Game.auto_equip else "关"), 11)
+	auto_eq.custom_minimum_size = Vector2(0, 24)
 	auto_eq.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	auto_eq.add_theme_color_override("font_color", UiKit.COL_GREEN if Game.auto_equip else UiKit.COL_MUTED)
 	auto_eq.pressed.connect(_toggle_auto_equip)
 	auto_row.add_child(auto_eq)
-	var auto_sell := UiKit.button("自动出售：%s" % ("开" if Game.auto_sell else "关"), 10)
-	auto_sell.custom_minimum_size = Vector2(0, 22)
+	var auto_sell := UiKit.button("自动出售：%s" % ("开" if Game.auto_sell else "关"), 11)
+	auto_sell.custom_minimum_size = Vector2(0, 24)
 	auto_sell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	auto_sell.add_theme_color_override("font_color", UiKit.COL_GREEN if Game.auto_sell else UiKit.COL_MUTED)
 	auto_sell.pressed.connect(_toggle_auto_sell)
@@ -219,20 +219,20 @@ func _refresh_body(box: VBoxContainer) -> void:
 	right.add_child(scroll)
 
 	var rv := VBoxContainer.new()
-	rv.custom_minimum_size = Vector2(380, 0)
+	rv.custom_minimum_size = Vector2(320, 0)
 	rv.add_theme_constant_override("separation", 3)
 	scroll.add_child(rv)
 
 	var prim_grid := GridContainer.new()
 	prim_grid.columns = 4
-	prim_grid.add_theme_constant_override("h_separation", 14)
+	prim_grid.add_theme_constant_override("h_separation", 10)
 	prim_grid.add_theme_constant_override("v_separation", 1)
 	rv.add_child(prim_grid)
 	for key in ["strength", "agility", "intellect", "stamina"]:
-		prim_grid.add_child(UiKit.label("%s %d" % [Data.PRIMARY_NAMES[key], int(stats.get(key, 0))], 11, UiKit.stat_color(key)))
+		prim_grid.add_child(UiKit.label("%s %d" % [Data.PRIMARY_NAMES[key], int(stats.get(key, 0))], 12, UiKit.stat_color(key)))
 
 	rv.add_child(UiKit.hsep())
-	rv.add_child(UiKit.label("战斗属性", 11, UiKit.COL_GOLD))
+	rv.add_child(UiKit.label("战斗属性", 12, UiKit.COL_GOLD))
 	var rows := [
 		["每秒伤害", UiKit.num(int(stats["dps"])), UiKit.COL_GOLD],
 		["生命上限", UiKit.num(int(stats["hp_max"])), UiKit.COL_GREEN],
@@ -272,13 +272,13 @@ func _refresh_body(box: VBoxContainer) -> void:
 
 func _stat_row(name_text: String, value_text: String, color: Color) -> HBoxContainer:
 	var h := HBoxContainer.new()
-	h.custom_minimum_size = Vector2(380, 0)
+	h.custom_minimum_size = Vector2(320, 0)
 	h.mouse_filter = Control.MOUSE_FILTER_STOP
-	var name_label := UiKit.label(name_text, 10, UiKit.COL_MUTED)
+	var name_label := UiKit.label(name_text, 11, UiKit.COL_MUTED)
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	h.add_child(name_label)
 	h.add_child(UiKit.spacer())
-	var v := UiKit.label(value_text, 11, color)
+	var v := UiKit.label(value_text, 12, color)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	h.add_child(v)
@@ -287,7 +287,7 @@ func _stat_row(name_text: String, value_text: String, color: Color) -> HBoxConta
 
 func _toggle_stats() -> void:
 	_stats_open = not _stats_open
-	resize_keep_origin(Vector2(800, 600) if _stats_open else Vector2(390, 600), true, true)
+	resize_keep_origin(Vector2(740, 550) if _stats_open else Vector2(390, 550), true, true)
 	refresh()
 
 

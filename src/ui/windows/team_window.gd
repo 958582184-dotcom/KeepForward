@@ -212,7 +212,7 @@ func _build_equipment_view(box: VBoxContainer) -> void:
 	box.add_child(head)
 	box.add_child(UiKit.hsep())
 	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(350, 340)
+	holder.custom_minimum_size = Vector2(350, 320)
 	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(holder)
 	var doll := PaperDoll.new()

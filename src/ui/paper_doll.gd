@@ -3,7 +3,7 @@ extends Control
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(350, 340)
+	custom_minimum_size = Vector2(350, 320)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
@@ -71,7 +71,7 @@ func _draw() -> void:
 	draw_line(Vector2(146, 198), Vector2(150, 252), Color(0.26, 0.31, 0.38, 0.5), 1.0)
 	draw_line(Vector2(184, 198), Vector2(180, 252), Color(0.26, 0.31, 0.38, 0.5), 1.0)
 
-	draw_rect(Rect2(0.5, 0.5, 349, 339), Color(0.24, 0.29, 0.37, 0.55), false, 1.0)
+	draw_rect(Rect2(0.5, 0.5, 349, 319), Color(0.24, 0.29, 0.37, 0.55), false, 1.0)
 
 
 func _limb(a: Vector2, b: Vector2, width: float, fill: Color, rim: Color) -> void:

@@ -44,19 +44,19 @@ func _build() -> void:
 	_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(_icon)
 
-	_empty = UiKit.label("", 12, UiKit.COL_DIM)
+	_empty = UiKit.label("", 13, UiKit.COL_DIM)
 	_empty.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_empty.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_empty.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_empty)
 
-	_ilvl = UiKit.label("", 10, UiKit.COL_MUTED)
+	_ilvl = UiKit.label("", 11, UiKit.COL_MUTED)
 	_ilvl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ilvl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(_ilvl)
 
-	_lock = UiKit.label("锁", 9, UiKit.COL_GOLD)
+	_lock = UiKit.label("锁", 10, UiKit.COL_GOLD)
 	_lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_lock.visible = false
 	add_child(_lock)
