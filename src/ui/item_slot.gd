@@ -86,12 +86,7 @@ func set_item(new_item: GameItem) -> void:
 func set_paper(enabled: bool) -> void:
 	paper = enabled
 	if _built:
-		var empty_col := Color("#c6a46b")
-		if slot_id == "off":
-			empty_col = Color("#9cc8ea")
-		elif slot_id == "hands":
-			empty_col = Color("#d3a36a")
-		_empty.add_theme_color_override("font_color", empty_col)
+		_empty.add_theme_color_override("font_color", Color("#c6a46b"))
 		_ilvl.add_theme_color_override("font_color", Color("#d8bc86") if paper else UiKit.COL_MUTED)
 		_lock.add_theme_color_override("font_color", Color("#f0c976") if paper else UiKit.COL_GOLD)
 		queue_redraw()
@@ -124,25 +119,11 @@ func _draw() -> void:
 	var border := Color(0.176, 0.212, 0.263)
 	if paper:
 		border = Color(0.58, 0.43, 0.24)
-		if slot_id == "off":
-			border = Color(0.38, 0.56, 0.74)
-		elif slot_id == "hands":
-			border = Color(0.64, 0.45, 0.27)
 	if item != null:
 		border = item.quality_color()
 	draw_rect(Rect2(Vector2(1, 1), size - Vector2(2, 2)), border, false, 2.0)
 	if paper:
 		draw_rect(Rect2(Vector2(4, 4), size - Vector2(8, 8)), Color(0.78, 0.60, 0.34, 0.22), false, 1.0)
-		var accent := Color(0.78, 0.60, 0.34, 0.55)
-		if slot_id == "off":
-			accent = Color(0.35, 0.62, 0.88, 0.9)
-		elif slot_id == "main":
-			accent = Color(0.86, 0.68, 0.34, 0.9)
-		elif slot_id == "hands":
-			accent = Color(0.72, 0.47, 0.26, 0.9)
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(size.x - 12, 1), Vector2(size.x - 1, 1), Vector2(size.x - 1, 12),
-		]), accent)
 		draw_circle(Vector2(5, 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
 		draw_circle(Vector2(size.x - 5, 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
 		draw_circle(Vector2(5, size.y - 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))

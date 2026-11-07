@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.51.0"
+const VERSION := "0.52.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -142,7 +142,7 @@ const SLOT_INFO := {
 	"legs": {"name": "腿甲", "short": "腿甲", "kind": "armor"},
 	"feet": {"name": "鞋子", "short": "鞋子", "kind": "armor"},
 	"main": {"name": "主武器", "short": "主武器", "kind": "weapon"},
-	"off": {"name": "副武器", "short": "副手", "kind": "offhand"},
+	"off": {"name": "副武器", "short": "副武器", "kind": "offhand"},
 	"neck": {"name": "项链", "short": "项链", "kind": "jewel"},
 	"trinket": {"name": "饰品", "short": "饰品", "kind": "jewel"},
 	"ring": {"name": "戒指", "short": "戒指", "kind": "jewel"},
