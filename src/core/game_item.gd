@@ -20,6 +20,9 @@ var locked := false
 var style := ""
 var rune_stat := ""
 var shop_factor := 1.0
+var set_id := ""
+var set_name := ""
+var set_level := 0
 
 
 static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: String,
@@ -291,7 +294,28 @@ static func create_dungeon_drop(rng: RandomNumberGenerator, level: int, q: int, 
 		slot = Data.DROP_EQUIP_SLOTS[Data.weighted_pick(rng, Data.DROP_EQUIP_WEIGHTS)]
 	elif cat == 1:
 		slot = Data.DROP_JEWEL_SLOTS[Data.weighted_pick(rng, Data.DROP_JEWEL_WEIGHTS)]
+	if rng.randf() < 0.55:
+		var candidates := Data.set_candidates(class_id, slot)
+		if not candidates.is_empty():
+			var set_id: String = candidates[rng.randi_range(0, candidates.size() - 1)]
+			return create_set_piece(rng, set_id, slot, level, q, class_id)
 	return create(rng, level, q, class_id, slot, "drop")
+
+
+static func create_set_piece(rng: RandomNumberGenerator, set_id: String, slot: String,
+		level: int, q: int, class_id: String) -> GameItem:
+	var d := Data.set_def(set_id)
+	var it := create(rng, level, q, class_id, slot, "drop")
+	it.set_id = set_id
+	it.set_name = String(d.get("name", set_id))
+	it.set_level = level
+	it.item_name = String((d.get("pieces", {}) as Dictionary).get(slot, it.item_name))
+	if it.slot != "neck" and it.slot != "ring" and it.slot != "trinket":
+		it.armor_type = String(d.get("armor_type", it.armor_type))
+		it.style = String(Data.ARMOR_STYLE_BY_TYPE.get(it.armor_type, it.style))
+		var qm := float(Data.QUALITIES[it.quality]["mult"])
+		it.stats["armor"] = round((8.0 + it.ilvl * 5.5) * qm * _armor_type_scale(it.armor_type))
+	return it
 
 
 static func _pick_slot(rng: RandomNumberGenerator) -> String:
@@ -447,6 +471,7 @@ func to_dict() -> Dictionary:
 		"at": armor_type, "wt": weapon_type, "wmin": weapon_min, "wmax": weapon_max,
 		"stats": stats.duplicate(), "price": price, "src": source, "locked": locked,
 		"style": style, "rune": rune_stat,
+		"set": set_id, "set_name": set_name, "set_lvl": set_level,
 		"spf": shop_factor,
 	}
 
@@ -471,6 +496,9 @@ static func from_dict(d: Dictionary) -> GameItem:
 	it.locked = bool(d.get("locked", false))
 	var raw_style := String(d.get("style", ""))
 	it.style = String(Data.LEGACY_STYLE_MAP.get(raw_style, raw_style))
+	it.set_id = String(d.get("set", ""))
+	it.set_name = String(d.get("set_name", ""))
+	it.set_level = int(d.get("set_lvl", 0))
 	if it.style == "":
 		if it.weapon_type != "":
 			it.style = String(Data.WEAPON_STYLE.get(it.weapon_type, ""))

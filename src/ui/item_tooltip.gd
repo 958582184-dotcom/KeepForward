@@ -26,7 +26,8 @@ func _clear() -> void:
 		c.queue_free()
 
 
-func show_item(item: GameItem, compare: GameItem, class_id: String, hint: String = "", show_compare: bool = true) -> void:
+func show_item(item: GameItem, compare: GameItem, class_id: String, hint: String = "", show_compare: bool = true,
+		set_count: int = -1) -> void:
 	if not _built:
 		_build()
 	if item == null:
@@ -41,6 +42,18 @@ func show_item(item: GameItem, compare: GameItem, class_id: String, hint: String
 	var can_use := Game.level >= item.req_level
 	_box.add_child(UiKit.label("穿戴等级 %d%s" % [item.req_level, "" if can_use else "（角色等级不足）"],
 		12, UiKit.COL_MUTED if can_use else UiKit.COL_RED))
+	if item.set_id != "":
+		var sd := Data.set_def(item.set_id)
+		if not sd.is_empty():
+			var count := Game.set_piece_count(item.set_id, item.set_level) if set_count < 0 else set_count
+			var max_count := int(sd.get("max", 0))
+			_box.add_child(UiKit.label("套装：%s（%d/%d） · 装等%d" % [
+				item.set_name, count, max_count, item.set_level], 12, UiKit.COL_GOLD))
+			var bonuses: Dictionary = sd.get("bonuses", {})
+			for threshold in bonuses:
+				var active := count >= int(threshold)
+				_box.add_child(UiKit.label("%d 件：%s" % [int(threshold), Data.set_bonus_text(bonuses[threshold])],
+					10, UiKit.COL_GREEN if active else UiKit.COL_DIM))
 	_box.add_child(UiKit.hsep())
 
 	for key in ["strength", "agility", "intellect", "stamina"]:

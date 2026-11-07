@@ -279,6 +279,28 @@ func _refresh_body(box: VBoxContainer) -> void:
 			row_h.tooltip_text = "按生命上限、护甲减伤、闪避、招架和格挡综合折算的承伤能力，不是直接血量"
 		pair_grid.add_child(row_h)
 
+	var active_sets: Array = stats.get("active_sets", [])
+	if not active_sets.is_empty():
+		rv.add_child(UiKit.hsep())
+		rv.add_child(UiKit.label("套装效果", 12, UiKit.COL_GOLD))
+		for entry in active_sets:
+			var set_id := String(entry.get("id", ""))
+			var sd := Data.set_def(set_id)
+			var count := int(entry.get("count", 0))
+			var max_count := int(entry.get("max", 0))
+			rv.add_child(UiKit.label("%s（%d/%d）· 装等%d" % [
+				String(entry.get("name", "")), count, max_count, int(entry.get("level", 0))],
+				11, UiKit.COL_GREEN if count >= 2 else UiKit.COL_MUTED))
+			var bonuses: Dictionary = sd.get("bonuses", {})
+			for threshold in bonuses:
+				if count < int(threshold):
+					continue
+				var line := UiKit.label("%d 件：%s" % [int(threshold), Data.set_bonus_text(bonuses[threshold])],
+					10, UiKit.COL_GREEN)
+				line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				rv.add_child(line)
+
 	if _stats_open:
 		main.add_child(right)
 	else:

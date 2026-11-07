@@ -241,7 +241,13 @@ func _build_equipment_view(box: VBoxContainer) -> void:
 func _show_team_item_tip(item: GameItem) -> void:
 	if item == null:
 		return
-	_tip.show_item(item, null, String(_view_member.get("class_id", "warrior")), "", false)
+	var count := 0
+	var eq: Dictionary = _view_member.get("equipment", {})
+	for key in eq:
+		var d: Variant = eq[key]
+		if d is Dictionary and String(d.get("set", "")) == item.set_id and int(d.get("set_lvl", 0)) == item.set_level:
+			count += 1
+	_tip.show_item(item, null, String(_view_member.get("class_id", "warrior")), "", false, count)
 	_tip.global_position = get_global_mouse_position() + Vector2(16, 12)
 
 

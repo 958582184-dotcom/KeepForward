@@ -377,6 +377,8 @@ func compute_stats() -> Dictionary:
 				s[stat_key] += float(it.stats[stat_key])
 
 	var main_key: String = cls["main"]
+	var active_sets_list := active_sets()
+	var set_pct := _set_percent_bonuses(active_sets_list)
 	var power := 0.0
 	if cls["attack_type"] == "magic":
 		power = float(s["spell_power"]) + float(s["intellect"]) * 2.35
@@ -391,18 +393,19 @@ func compute_stats() -> Dictionary:
 		crit += float(s["agility"]) * 0.0015
 	elif main_key == "intellect":
 		crit += float(s["intellect"]) * 0.0010
+	crit += float(set_pct.get("crit_pct", 0.0))
 	crit = clampf(crit, 0.02, 0.60)
 
-	var crit_dmg: float = 1.5 + float(s["crit_dmg"]) / 1000.0
-	var haste: float = float(s["haste"]) / 1000.0
+	var crit_dmg: float = 1.5 + float(s["crit_dmg"]) / 1000.0 + float(set_pct.get("crit_dmg_pct", 0.0))
+	var haste: float = float(s["haste"]) / 1000.0 + float(set_pct.get("haste_pct", 0.0))
 	var ch: Dictionary = Data.character_def(class_id)
 	power *= 1.0 + float(ch.get("power_pct", 0.0))
 	crit = clampf(crit + float(ch.get("crit", 0.0)), 0.02, 0.60)
 	haste += float(ch.get("haste", 0.0))
 	var hit: float = clampf(0.95 + float(s["hit"]) / 2000.0, 0.50, 1.0)
-	var dodge: float = 0.02 + float(s["dodge"]) / 1600.0
-	var parry: float = 0.01 + float(s["parry"]) / 1600.0
-	var block: float = float(s["block"]) / 1600.0
+	var dodge: float = 0.02 + float(s["dodge"]) / 1600.0 + float(set_pct.get("dodge_pct", 0.0))
+	var parry: float = 0.01 + float(s["parry"]) / 1600.0 + float(set_pct.get("parry_pct", 0.0))
+	var block: float = float(s["block"]) / 1600.0 + float(set_pct.get("block_pct", 0.0))
 	if main_key == "agility":
 		dodge += 0.02
 	if main_key == "strength":
@@ -412,8 +415,8 @@ func compute_stats() -> Dictionary:
 	parry = clampf(parry, 0.0, 0.45)
 	block = clampf(block, 0.0, 0.45)
 	var vers: float = clampf(float(s["vers"]) / 1200.0, 0.0, 0.30)
-	var lifesteal: float = clampf(float(s["lifesteal"]) / 1500.0 + float(ch.get("lifesteal", 0.0)), 0.0, 0.30)
-	var pen: float = clampf(float(s["pen"]) / 1000.0 + float(ch.get("pen", 0.0)), 0.0, 0.65)
+	var lifesteal: float = clampf(float(s["lifesteal"]) / 1500.0 + float(ch.get("lifesteal", 0.0)) + float(set_pct.get("lifesteal_pct", 0.0)), 0.0, 0.30)
+	var pen: float = clampf(float(s["pen"]) / 1000.0 + float(ch.get("pen", 0.0)) + float(set_pct.get("pen_pct", 0.0)), 0.0, 0.65)
 	var hp_regen: float = maxf(0.0, float(s["hp_regen"]))
 	var extra_attack_pct: float = clampf(float(s["extra_attack"]) / 100.0, 0.0, 0.30)
 
@@ -422,12 +425,13 @@ func compute_stats() -> Dictionary:
 	var crit_mult: float = 1.0 + crit * (crit_dmg - 1.0)
 	var interval: float = float(cls["attack_interval"])
 	var dps: float = avg_hit * power_mult * crit_mult * hit * (1.0 + haste) / interval * (1.0 + vers)
+	dps *= 1.0 + float(set_pct.get("dmg_pct", 0.0))
 
 	var stamina: float = float(s["stamina"])
 	var hp: float = float(cls["base_hp"]) + stamina * 10.0 + level * 6.0 + float(s["hp"])
-	hp *= 1.0 + float(ch.get("hp_pct", 0.0))
+	hp *= 1.0 + float(ch.get("hp_pct", 0.0)) + float(set_pct.get("hp_pct", 0.0))
 	var armor: float = 10.0 + level * 2.0 + float(s["armor"])
-	armor *= 1.0 + float(ch.get("armor_pct", 0.0))
+	armor *= 1.0 + float(ch.get("armor_pct", 0.0)) + float(set_pct.get("armor_pct", 0.0))
 	var mit: float = armor / (armor + 90.0 + 12.0 * level)
 	mit = clampf(mit, 0.0, 0.75)
 	var ehp: float = hp / maxf(0.01, (1.0 - mit) * (1.0 - dodge) * (1.0 - parry) * (1.0 - block))
@@ -457,7 +461,80 @@ func compute_stats() -> Dictionary:
 	out["ilvl"] = int(round(ilvl_sum / maxf(1.0, float(item_count)))) if item_count > 0 else 1
 	out["ehp"] = ehp
 	out["interval"] = interval
+	out["active_sets"] = active_sets_list
 	return out
+
+
+func active_sets() -> Array:
+	var counts := {}
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it == null or it.set_id == "" or it.set_level <= 0:
+			continue
+		var d := Data.set_def(it.set_id)
+		if d.is_empty():
+			continue
+		if String(d.get("cls", "")) != String(Data.character_def(class_id).get("archetype", class_id)):
+			continue
+		var map_key := "%s|%d" % [it.set_id, it.set_level]
+		if not counts.has(map_key):
+			counts[map_key] = {"id": it.set_id, "name": it.set_name, "level": it.set_level, "count": 0,
+				"max": int(d.get("max", 0))}
+		counts[map_key]["count"] += 1
+	var out: Array = []
+	for key in counts:
+		out.append(counts[key])
+	out.sort_custom(func(a, b):
+		if String(a["id"]) != String(b["id"]):
+			return String(a["id"]) < String(b["id"])
+		return int(a["level"]) < int(b["level"]))
+	return out
+
+
+func set_piece_count(set_id: String, set_level: int) -> int:
+	var n := 0
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it != null and it.set_id == set_id and it.set_level == set_level:
+			n += 1
+	return n
+
+
+func _set_percent_bonuses(sets_list: Array) -> Dictionary:
+	var out := {}
+	for entry in sets_list:
+		var d := Data.set_def(String(entry.get("id", "")))
+		var bonuses: Dictionary = d.get("bonuses", {})
+		for threshold in bonuses:
+			if int(entry.get("count", 0)) < int(threshold):
+				continue
+			for key in bonuses[threshold]:
+				out[key] = float(out.get(key, 0.0)) + float(bonuses[threshold][key])
+	return out
+
+
+func _would_break_set(old_item: GameItem, new_item: GameItem) -> bool:
+	if old_item == null or old_item.set_id == "" or old_item.set_level <= 0:
+		return false
+	var counts := {}
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it == null or it.set_id == "" or it.set_level <= 0:
+			continue
+		var k := "%s|%d" % [it.set_id, it.set_level]
+		counts[k] = int(counts.get(k, 0)) + 1
+	var old_key := "%s|%d" % [old_item.set_id, old_item.set_level]
+	var before := int(counts.get(old_key, 0))
+	var d := Data.set_def(old_item.set_id)
+	for threshold in (d.get("bonuses", {}) as Dictionary):
+		if before < int(threshold):
+			continue
+		var after := before - 1
+		if new_item != null and new_item.set_id == old_item.set_id and new_item.set_level == old_item.set_level:
+			after += 1
+		if after < int(threshold):
+			return true
+	return false
 
 
 func class_name_text() -> String:
@@ -489,23 +566,26 @@ func receive_drop(item: GameItem) -> void:
 		var key := _auto_equip_key(item)
 		var old: GameItem = equipment.get(key)
 		if old == null or (not old.locked and item.score(class_id) > old.score(class_id) + 0.001):
-			equipment[key] = item
-			equipped = true
-			_dirty = true
-			equipment_changed.emit()
-			stats_changed.emit()
-			toast.emit("自动装备 %s" % item.item_name, item.quality_color())
-			if old != null:
-				if auto_sell and not old.locked:
-					var old_gold := old.sell_value()
-					gold += old_gold
-					gold_changed.emit()
-					toast.emit("自动出售替换下的 %s  +%d 金币" % [old.item_name, old_gold], Color("#e0b45a"))
-				elif not add_item(old):
-					var old_gold2 := old.sell_value()
-					gold += old_gold2
-					gold_changed.emit()
-					toast.emit("背包已满，替换下的装备已自动出售  +%d 金币" % old_gold2, Color("#e0b45a"))
+			if old != null and _would_break_set(old, item):
+				toast.emit("自动换装已跳过：换下 %s 会拆散套装" % old.item_name, Color("#ffd76a"))
+			else:
+				equipment[key] = item
+				equipped = true
+				_dirty = true
+				equipment_changed.emit()
+				stats_changed.emit()
+				toast.emit("自动装备 %s" % item.item_name, item.quality_color())
+				if old != null:
+					if auto_sell and not old.locked:
+						var old_gold := old.sell_value()
+						gold += old_gold
+						gold_changed.emit()
+						toast.emit("自动出售替换下的 %s  +%d 金币" % [old.item_name, old_gold], Color("#e0b45a"))
+					elif not add_item(old):
+						var old_gold2 := old.sell_value()
+						gold += old_gold2
+						gold_changed.emit()
+						toast.emit("背包已满，替换下的装备已自动出售  +%d 金币" % old_gold2, Color("#e0b45a"))
 	if not equipped:
 		if auto_sell:
 			var value := item.sell_value()

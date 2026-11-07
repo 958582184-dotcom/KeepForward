@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.67.0"
+const VERSION := "0.68.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -165,6 +165,101 @@ const QUALITIES := [
 ]
 
 const QUALITY_PREFIX := ["磨损的", "坚固的", "精工的", "史诗的", "传世的"]
+
+const SETS := {
+	"throne_oath": {"name": "王座之誓", "cls": "warrior", "track": "armor", "armor_type": "plate", "max": 5,
+		"pieces": {"head": "不眠王冠", "chest": "王座壁垒", "hands": "誓约之握", "legs": "不退之膝", "feet": "最后岗哨"},
+		"bonuses": {3: {"armor_pct": 0.08, "parry_pct": 0.02}, 5: {"hp_pct": 0.08, "armor_pct": 0.10}}},
+	"ashen_veteran": {"name": "灰烬老兵", "cls": "warrior", "track": "armor", "armor_type": "plate", "max": 2,
+		"pieces": {"chest": "灰烬胸甲", "legs": "余烬护腿"},
+		"bonuses": {2: {"hp_pct": 0.06, "armor_pct": 0.05}}},
+	"traitor_shell": {"name": "背叛者之壳", "cls": "warrior", "track": "armor", "armor_type": "plate", "max": 3,
+		"pieces": {"head": "叛徒的沉默", "hands": "伪誓之手", "feet": "逃亡者之靴"},
+		"bonuses": {3: {"dodge_pct": 0.03, "armor_pct": 0.06}}},
+	"lion_wrath": {"name": "雄狮之怒", "cls": "warrior", "track": "armor", "armor_type": "heavy", "max": 5,
+		"pieces": {"head": "狮鬃战盔", "chest": "怒吼胸甲", "hands": "裂爪护手", "legs": "猎王护腿", "feet": "追猎战靴"},
+		"bonuses": {3: {"dmg_pct": 0.05, "crit_pct": 0.03}, 5: {"dmg_pct": 0.07, "haste_pct": 0.04}}},
+	"broken_fang": {"name": "断牙", "cls": "warrior", "track": "armor", "armor_type": "heavy", "max": 2,
+		"pieces": {"chest": "断牙胸甲", "hands": "残牙护手"},
+		"bonuses": {2: {"crit_pct": 0.03, "haste_pct": 0.03}}},
+	"butcher_feast": {"name": "屠夫之宴", "cls": "warrior", "track": "armor", "armor_type": "heavy", "max": 3,
+		"pieces": {"head": "屠夫面具", "legs": "血宴护腿", "feet": "筵席之靴"},
+		"bonuses": {3: {"dmg_pct": 0.05, "pen_pct": 0.03}}},
+	"forgemaster": {"name": "铸火者的杰作", "cls": "warrior", "track": "jewel", "max": 3,
+		"pieces": {"neck": "熔金之链", "ring": "不灭炉心", "trinket": "大师的签名"},
+		"bonuses": {2: {"crit_pct": 0.02}, 3: {"dmg_pct": 0.04, "crit_dmg_pct": 0.10}}},
+	"serpent_kiss": {"name": "毒蛇之吻", "cls": "warrior", "track": "jewel", "max": 2,
+		"pieces": {"neck": "毒牙项链", "ring": "蛇眼戒指"},
+		"bonuses": {2: {"haste_pct": 0.03, "pen_pct": 0.02}}},
+	"nightwatcher": {"name": "守夜人的灯", "cls": "warrior", "track": "jewel", "max": 3,
+		"pieces": {"neck": "长明灯", "ring": "守夜人之眼", "trinket": "不灭灯芯"},
+		"bonuses": {2: {"hp_pct": 0.04}, 3: {"armor_pct": 0.06, "hp_pct": 0.04}}},
+	"graveward": {"name": "墓碑之护", "cls": "warrior", "track": "jewel", "max": 2,
+		"pieces": {"neck": "墓碑护符", "ring": "安息之戒"},
+		"bonuses": {2: {"hp_pct": 0.04, "armor_pct": 0.04}}},
+
+	"starlit_echo": {"name": "星穹回响", "cls": "mage", "track": "armor", "armor_type": "cloth", "max": 5,
+		"pieces": {"head": "观星者之冠", "chest": "星图法袍", "hands": "执笔之手", "legs": "夜航长裤", "feet": "无声步履"},
+		"bonuses": {3: {"dmg_pct": 0.05, "crit_pct": 0.03}, 5: {"dmg_pct": 0.07, "haste_pct": 0.04}}},
+	"bookburner": {"name": "焚书者", "cls": "mage", "track": "armor", "armor_type": "cloth", "max": 2,
+		"pieces": {"chest": "焚书残袍", "legs": "焦页护腿"},
+		"bonuses": {2: {"dmg_pct": 0.04, "crit_pct": 0.02}}},
+	"shattered_mirror": {"name": "碎镜", "cls": "mage", "track": "armor", "armor_type": "cloth", "max": 3,
+		"pieces": {"head": "碎镜面罩", "hands": "棱光手甲", "feet": "折影长靴"},
+		"bonuses": {3: {"crit_pct": 0.03, "pen_pct": 0.03}}},
+	"eclipse_veil": {"name": "月蚀之纱", "cls": "mage", "track": "armor", "armor_type": "light", "max": 5,
+		"pieces": {"head": "月蚀冠冕", "chest": "暗纱长袍", "hands": "银线护手", "legs": "夜潮长裤", "feet": "露行长靴"},
+		"bonuses": {3: {"hp_pct": 0.05, "lifesteal_pct": 0.02}, 5: {"hp_pct": 0.06, "armor_pct": 0.06, "lifesteal_pct": 0.02}}},
+	"silver_dew": {"name": "银露", "cls": "mage", "track": "armor", "armor_type": "light", "max": 2,
+		"pieces": {"chest": "露凝轻甲", "hands": "露滴护手"},
+		"bonuses": {2: {"hp_pct": 0.04, "haste_pct": 0.03}}},
+	"vigil_keeper": {"name": "守灵人", "cls": "mage", "track": "armor", "armor_type": "light", "max": 3,
+		"pieces": {"head": "守灵面纱", "legs": "灯下长裤", "feet": "长明步履"},
+		"bonuses": {3: {"lifesteal_pct": 0.02, "hp_pct": 0.04}}},
+	"pact_stars": {"name": "群星之契", "cls": "mage", "track": "jewel", "max": 3,
+		"pieces": {"neck": "星尘之链", "ring": "轨道之环", "trinket": "星核"},
+		"bonuses": {2: {"crit_pct": 0.02}, 3: {"dmg_pct": 0.04, "crit_dmg_pct": 0.10}}},
+	"ashen_dust": {"name": "飞灰", "cls": "mage", "track": "jewel", "max": 2,
+		"pieces": {"neck": "飞灰坠", "ring": "余温之环"},
+		"bonuses": {2: {"haste_pct": 0.03, "pen_pct": 0.02}}},
+	"sunken_bell": {"name": "沉钟", "cls": "mage", "track": "jewel", "max": 3,
+		"pieces": {"neck": "沉钟之链", "ring": "钟舌之环", "trinket": "静海钟"},
+		"bonuses": {2: {"hp_pct": 0.04}, 3: {"armor_pct": 0.05, "hp_pct": 0.04}}},
+	"mist": {"name": "薄雾", "cls": "mage", "track": "jewel", "max": 2,
+		"pieces": {"neck": "薄雾坠", "ring": "雾隐之环"},
+		"bonuses": {2: {"dodge_pct": 0.03, "armor_pct": 0.04}}},
+
+	"windscar": {"name": "风痕", "cls": "archer", "track": "armor", "armor_type": "leather", "max": 5,
+		"pieces": {"head": "风痕兜帽", "chest": "疾行皮甲", "hands": "引弦护手", "legs": "踏风护腿", "feet": "追影皮靴"},
+		"bonuses": {3: {"haste_pct": 0.04, "crit_pct": 0.03}, 5: {"haste_pct": 0.05, "dmg_pct": 0.06}}},
+	"featherlight": {"name": "轻羽", "cls": "archer", "track": "armor", "armor_type": "leather", "max": 2,
+		"pieces": {"chest": "轻羽胸甲", "legs": "绒羽护腿"},
+		"bonuses": {2: {"haste_pct": 0.03, "dodge_pct": 0.02}}},
+	"shadowpass": {"name": "掠影", "cls": "archer", "track": "armor", "armor_type": "leather", "max": 3,
+		"pieces": {"head": "掠影头巾", "hands": "影缝护手", "feet": "过隙之靴"},
+		"bonuses": {3: {"haste_pct": 0.04, "crit_pct": 0.02}}},
+	"eyrie": {"name": "鹰巢", "cls": "archer", "track": "armor", "armor_type": "mail", "max": 5,
+		"pieces": {"head": "鹰巢兜帽", "chest": "鹰眼锁甲", "hands": "扣弦护手", "legs": "俯冲护腿", "feet": "山脊战靴"},
+		"bonuses": {3: {"crit_pct": 0.03, "crit_dmg_pct": 0.08}, 5: {"dmg_pct": 0.07, "crit_pct": 0.03}}},
+	"huntsman": {"name": "猎户", "cls": "archer", "track": "armor", "armor_type": "mail", "max": 2,
+		"pieces": {"chest": "猎户锁甲", "hands": "准星护手"},
+		"bonuses": {2: {"crit_pct": 0.02, "pen_pct": 0.03}}},
+	"bone_whistle": {"name": "骨哨", "cls": "archer", "track": "armor", "armor_type": "mail", "max": 3,
+		"pieces": {"head": "骨哨面罩", "legs": "白鹿护腿", "feet": "静步战靴"},
+		"bonuses": {3: {"pen_pct": 0.03, "dmg_pct": 0.04}}},
+	"hundred_paces": {"name": "百步", "cls": "archer", "track": "jewel", "max": 3,
+		"pieces": {"neck": "百步之链", "ring": "准星之环", "trinket": "弦鸣"},
+		"bonuses": {2: {"crit_pct": 0.02}, 3: {"crit_dmg_pct": 0.10, "pen_pct": 0.02}}},
+	"flying_shaft": {"name": "飞矢", "cls": "archer", "track": "jewel", "max": 2,
+		"pieces": {"neck": "飞矢坠", "ring": "箭羽之戒"},
+		"bonuses": {2: {"haste_pct": 0.03, "pen_pct": 0.02}}},
+	"windward": {"name": "风障", "cls": "archer", "track": "jewel", "max": 3,
+		"pieces": {"neck": "风障之链", "ring": "逆风之环", "trinket": "风眼"},
+		"bonuses": {2: {"dodge_pct": 0.02}, 3: {"hp_pct": 0.04, "armor_pct": 0.04}}},
+	"moss_stone": {"name": "苔石", "cls": "archer", "track": "jewel", "max": 2,
+		"pieces": {"neck": "苔石坠", "ring": "石心之戒"},
+		"bonuses": {2: {"hp_pct": 0.04, "armor_pct": 0.04}}},
+}
 
 const AFFIX_KIND := {
 	"crit": {"name": "暴击", "title": "锐利", "div": 8.0, "percent": true},
@@ -340,6 +435,44 @@ static func character_name(class_id: String) -> String:
 
 static func quality_color(q: int) -> Color:
 	return Color(QUALITIES[clampi(q, 0, 4)]["color"])
+
+
+static func set_def(set_id: String) -> Dictionary:
+	return SETS.get(set_id, {})
+
+
+static func set_candidates(class_id: String, slot: String) -> Array:
+	var cls := String(character_def(class_id).get("archetype", class_id))
+	var kind := String(SLOT_INFO.get(slot, {}).get("kind", ""))
+	var track := ""
+	if kind == "armor":
+		track = "armor"
+	elif kind == "jewel":
+		track = "jewel"
+	if track == "":
+		return []
+	var out: Array = []
+	for set_id in SETS:
+		var d: Dictionary = SETS[set_id]
+		if String(d.get("cls", "")) != cls or String(d.get("track", "")) != track:
+			continue
+		if (d.get("pieces", {}) as Dictionary).has(slot):
+			out.append(set_id)
+	return out
+
+
+static func set_bonus_text(bonus: Dictionary) -> String:
+	var parts: Array = []
+	var labels := {
+		"hp_pct": "生命", "armor_pct": "护甲", "dmg_pct": "伤害",
+		"crit_pct": "暴击", "haste_pct": "急速", "pen_pct": "穿透",
+		"lifesteal_pct": "吸血", "dodge_pct": "闪避", "parry_pct": "招架",
+		"block_pct": "格挡", "crit_dmg_pct": "暴击伤害",
+	}
+	for key in labels:
+		if bonus.has(key):
+			parts.append("%s +%.0f%%" % [labels[key], float(bonus[key]) * 100.0])
+	return " · ".join(parts)
 
 
 static func quality_name(q: int) -> String:

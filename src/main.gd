@@ -87,6 +87,10 @@ func _ready() -> void:
 		_run_equiptest()
 		return
 
+	if "--settest" in args:
+		_run_settest()
+		return
+
 	if "--battletest" in args:
 		_run_battletest()
 		return
@@ -322,6 +326,33 @@ func _run_uitest() -> void:
 	await get_tree().create_timer(0.2).timeout
 	var refresh = hud._shop._footer_left.get_child(0)
 	print("UI shop_refresh='%s' gold=%d" % [refresh.text, Game.gold])
+	get_tree().quit()
+
+
+func _run_settest() -> void:
+	Game.new_game("warrior")
+	Game.level = 16
+	var seen := {}
+	for i in 80:
+		var it := GameItem.create_dungeon_drop(Game.rng, 16, 2, "warrior")
+		if it.set_id != "":
+			seen[it.set_id] = String(it.set_name)
+	print("SETTEST drops=%d" % seen.size())
+	for key in ["head", "chest", "hands", "legs", "feet"]:
+		Game.equipment[key] = null
+	for key in ["head", "chest", "hands"]:
+		var it := GameItem.create_set_piece(Game.rng, "lion_wrath", key, 16, 2, "warrior")
+		it.req_level = 1
+		Game.equipment[key] = it
+	var st := Game.compute_stats()
+	print("SETTEST lion3 active=%s dps=%.0f crit=%.1f%%" % [
+		str(st.get("active_sets", [])), float(st.get("dps", 0)), float(st.get("crit_pct", 0)) * 100.0])
+	for key in ["legs", "feet"]:
+		var it := GameItem.create_set_piece(Game.rng, "lion_wrath", key, 15, 2, "warrior")
+		it.req_level = 1
+		Game.equipment[key] = it
+	var st2 := Game.compute_stats()
+	print("SETTEST split_levels active=%s" % str(st2.get("active_sets", [])))
 	get_tree().quit()
 
 
