@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.49.0"
+const VERSION := "0.50.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -148,14 +148,13 @@ const SLOT_INFO := {
 	"ring": {"name": "戒指", "short": "戒指", "kind": "jewel"},
 	"rune": {"name": "符文", "short": "符文", "kind": "rune"},
 	"ring1": {"name": "戒指", "short": "戒指", "kind": "jewel"},
-	"ring2": {"name": "戒指", "short": "戒指", "kind": "jewel"},
 	"rune1": {"name": "符文", "short": "符文", "kind": "rune"},
 	"rune2": {"name": "符文", "short": "符文", "kind": "rune"},
 	"rune3": {"name": "符文", "short": "符文", "kind": "rune"},
 }
 
 const EQUIP_ORDER := ["head", "neck", "chest", "main", "off", "hands", "legs",
-	"ring1", "ring2", "trinket", "feet", "rune1", "rune2", "rune3"]
+	"ring1", "trinket", "feet", "rune1", "rune2", "rune3"]
 
 const QUALITIES := [
 	{"name": "普通", "color": "#b9c2d0", "mult": 1.00, "affixes": 1},

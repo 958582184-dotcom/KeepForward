@@ -2,6 +2,7 @@ class_name BackpackWindow
 extends BaseWindow
 
 const EQ_CELL := 50
+const EQ_BIG_CELL := 56
 const INV_CELL := 36
 const EQ_POS := {
 	"head": Vector2(150, 50),
@@ -9,15 +10,14 @@ const EQ_POS := {
 	"legs": Vector2(150, 170),
 	"feet": Vector2(150, 235),
 	"hands": Vector2(85, 150),
-	"main": Vector2(85, 95),
-	"off": Vector2(225, 105),
+	"main": Vector2(82, 82),
+	"off": Vector2(222, 92),
 	"neck": Vector2(285, 20),
 	"ring1": Vector2(285, 75),
-	"ring2": Vector2(285, 130),
-	"trinket": Vector2(285, 185),
-	"rune1": Vector2(30, 150),
-	"rune2": Vector2(30, 205),
-	"rune3": Vector2(30, 260),
+	"trinket": Vector2(285, 130),
+	"rune1": Vector2(8, 150),
+	"rune2": Vector2(8, 205),
+	"rune3": Vector2(8, 260),
 }
 
 var _tip: ItemTooltip
@@ -73,11 +73,11 @@ func _refresh_body(box: VBoxContainer) -> void:
 	var doll := PaperDoll.new()
 	doll.custom_minimum_size = Vector2(350, 320)
 	left.add_child(doll)
-	var equip_lv := UiKit.label("装备等级 %d" % int(Game.compute_stats().get("ilvl", 1)), 11, Color("#3d2a17"))
+	var equip_lv := UiKit.label("装备等级 %d" % int(Game.compute_stats().get("ilvl", 1)), 12, Color("#3d2a17"))
 	equip_lv.position = Vector2(6, 4)
 	doll.add_child(equip_lv)
 	var toggle := UiKit.button("◀" if _stats_open else "▶", 12)
-	toggle.position = Vector2(308, 4)
+	toggle.position = Vector2(304, 286)
 	toggle.custom_minimum_size = Vector2(32, 26)
 	toggle.size = Vector2(32, 26)
 	toggle.clip_contents = false
@@ -87,7 +87,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	toggle.add_theme_stylebox_override("hover", UiKit.stylebox(Color(0.16, 0.14, 0.11, 0.95), UiKit.COL_GOLD, 1, 2))
 	toggle.pressed.connect(_toggle_stats)
 	var toggle_frame := PanelContainer.new()
-	toggle_frame.position = Vector2(306, 2)
+	toggle_frame.position = Vector2(302, 284)
 	toggle_frame.custom_minimum_size = Vector2(36, 30)
 	toggle_frame.size = Vector2(36, 30)
 	toggle_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -96,7 +96,8 @@ func _refresh_body(box: VBoxContainer) -> void:
 	doll.add_child(toggle_frame)
 	doll.add_child(toggle)
 	for key in Data.EQUIP_ORDER:
-		var slot := ItemSlot.new(EQ_CELL, key)
+		var cell := EQ_BIG_CELL if key == "main" or key == "off" else EQ_CELL
+		var slot := ItemSlot.new(cell, key)
 		slot.position = EQ_POS.get(key, Vector2.ZERO)
 		slot.set_item(Game.equipment.get(key))
 		slot.clicked.connect(_on_equip_clicked)

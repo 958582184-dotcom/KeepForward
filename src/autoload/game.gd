@@ -248,8 +248,13 @@ func load_game() -> bool:
 			shop_stock.append(GameItem.from_dict(s))
 	_clear_equipment()
 	var eq: Dictionary = d.get("equip", {})
+	var legacy_ring2: GameItem = null
 	for key in eq:
-		if equipment.has(key) and eq[key] != null:
+		if eq[key] == null:
+			continue
+		if key == "ring2":
+			legacy_ring2 = GameItem.from_dict(eq[key])
+		elif equipment.has(key):
 			equipment[key] = GameItem.from_dict(eq[key])
 	var inv: Array = d.get("inv", [])
 	inventory.clear()
@@ -257,6 +262,14 @@ func load_game() -> bool:
 	for i in mini(inv.size(), Data.INVENTORY_SIZE):
 		if inv[i] != null:
 			inventory[i] = GameItem.from_dict(inv[i])
+	if legacy_ring2 != null:
+		if equipment.get("ring1") == null:
+			equipment["ring1"] = legacy_ring2
+		else:
+			for i in inventory.size():
+				if inventory[i] == null:
+					inventory[i] = legacy_ring2
+					break
 	_remove_test_items()
 	loaded = true
 	return true
@@ -460,12 +473,7 @@ func receive_drop(item: GameItem) -> void:
 func _auto_equip_key(item: GameItem) -> String:
 	match item.slot:
 		"ring":
-			for key in ["ring1", "ring2"]:
-				if equipment.get(key) == null:
-					return key
-			var r1: GameItem = equipment["ring1"]
-			var r2: GameItem = equipment["ring2"]
-			return "ring1" if r1.score(class_id) <= r2.score(class_id) else "ring2"
+			return "ring1"
 		"rune":
 			for key in ["rune1", "rune2", "rune3"]:
 				if equipment.get(key) == null:
@@ -560,9 +568,6 @@ func inventory_count() -> int:
 func find_equip_key(item: GameItem) -> String:
 	match item.slot:
 		"ring":
-			for key in ["ring1", "ring2"]:
-				if equipment.get(key) == null:
-					return key
 			return "ring1"
 		"rune":
 			for key in ["rune1", "rune2", "rune3"]:
@@ -578,10 +583,7 @@ func compare_item(item: GameItem) -> GameItem:
 		return null
 	var key := find_equip_key(item)
 	if item.slot == "ring":
-		if equipment.get("ring1") != null:
-			return equipment["ring1"]
-		if equipment.get("ring2") != null:
-			return equipment["ring2"]
+		return equipment.get("ring1")
 	if item.slot == "rune":
 		for k in ["rune1", "rune2", "rune3"]:
 			if equipment.get(k) != null:
@@ -632,7 +634,7 @@ func can_equip_to(item: GameItem, key: String) -> bool:
 		return false
 	match item.slot:
 		"ring":
-			return key == "ring1" or key == "ring2"
+			return key == "ring1"
 		"rune":
 			return key in ["rune1", "rune2", "rune3"]
 		_:
