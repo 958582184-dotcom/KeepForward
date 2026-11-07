@@ -77,13 +77,23 @@ func _refresh_body(box: VBoxContainer) -> void:
 	equip_lv.position = Vector2(6, 4)
 	doll.add_child(equip_lv)
 	var toggle := UiKit.button("◀" if _stats_open else "▶", 12)
-	toggle.position = Vector2(322, 4)
-	toggle.custom_minimum_size = Vector2(24, 24)
+	toggle.position = Vector2(308, 4)
+	toggle.custom_minimum_size = Vector2(32, 26)
+	toggle.size = Vector2(32, 26)
+	toggle.clip_contents = false
 	toggle.tooltip_text = "收起属性" if _stats_open else "展开属性"
 	toggle.add_theme_color_override("font_color", UiKit.COL_GOLD)
 	toggle.add_theme_stylebox_override("normal", UiKit.stylebox(Color(0.10, 0.12, 0.16, 0.9), Color(0.30, 0.26, 0.20), 1, 2))
 	toggle.add_theme_stylebox_override("hover", UiKit.stylebox(Color(0.16, 0.14, 0.11, 0.95), UiKit.COL_GOLD, 1, 2))
 	toggle.pressed.connect(_toggle_stats)
+	var toggle_frame := PanelContainer.new()
+	toggle_frame.position = Vector2(306, 2)
+	toggle_frame.custom_minimum_size = Vector2(36, 30)
+	toggle_frame.size = Vector2(36, 30)
+	toggle_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	toggle_frame.add_theme_stylebox_override("panel",
+		UiKit.stylebox(Color(0, 0, 0, 0), Color(0.30, 0.26, 0.20), 1, 0))
+	doll.add_child(toggle_frame)
 	doll.add_child(toggle)
 	for key in Data.EQUIP_ORDER:
 		var slot := ItemSlot.new(EQ_CELL, key)

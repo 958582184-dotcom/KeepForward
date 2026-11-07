@@ -349,8 +349,42 @@ func _run_shot() -> void:
 		Game.new_game("warrior")
 		world.set_class("warrior")
 		await get_tree().create_timer(0.3).timeout
-		Net.create_room("测试队伍", "")
+		if not Net.create_room("测试队伍", ""):
+			Net.in_party = true
+			Net.is_host = true
+			Net.local_id = 1
+			Net.leader_id = 1
+			Net.room_name = "测试队伍"
+			var p: Dictionary = Game.profile_snapshot()
+			p["id"] = 1
+			p["position"] = 1
+			p["is_leader"] = true
+			Net.members = [p]
+			Net.party_changed.emit()
 		hud.toggle_window("team")
+		await get_tree().create_timer(0.4).timeout
+	elif _shot == "main":
+		Game.new_game("warrior")
+		world.set_class("warrior")
+		await get_tree().create_timer(0.4).timeout
+	elif _shot == "inspect":
+		Game.new_game("warrior")
+		world.set_class("warrior")
+		await get_tree().create_timer(0.3).timeout
+		Net.in_party = true
+		Net.is_host = true
+		Net.local_id = 1
+		Net.leader_id = 1
+		Net.room_name = "测试队伍"
+		var p: Dictionary = Game.profile_snapshot()
+		p["id"] = 1
+		p["position"] = 1
+		p["is_leader"] = true
+		Net.members = [p]
+		Net.party_changed.emit()
+		hud.toggle_window("team")
+		await get_tree().create_timer(0.4).timeout
+		hud._team._show_equipment(Net.members[0])
 		await get_tree().create_timer(0.4).timeout
 	else:
 		Game.debug_seed()

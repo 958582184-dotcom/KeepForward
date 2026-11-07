@@ -2,7 +2,7 @@ class_name TeamWindow
 extends BaseWindow
 
 var _tip: ItemTooltip
-var _inspect: PanelContainer
+var _view_member: Dictionary = {}
 var _room_input: LineEdit
 var _create_pass: LineEdit
 var _manual_ip: LineEdit
@@ -18,6 +18,8 @@ func _after_build() -> void:
 	_tip = ItemTooltip.new()
 	_tip.z_index = 100
 	add_child(_tip)
+	closed.connect(func():
+		_view_member = {})
 	Net.party_changed.connect(_on_net_changed)
 	Net.rooms_changed.connect(_on_net_changed)
 
@@ -36,7 +38,9 @@ func _refresh_body(box: VBoxContainer) -> void:
 		c.queue_free()
 	if _tip != null:
 		_tip.hide_tip()
-	_hide_inspect()
+	if not _view_member.is_empty():
+		_build_equipment_view(box)
+		return
 	if Net.in_party:
 		_build_party(box)
 	else:
@@ -138,7 +142,14 @@ func _build_position_bar(box: VBoxContainer, sorted_members: Array) -> void:
 	row.alignment = BoxContainer.ALIGNMENT_END
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 4)
-	scroll.add_child(row)
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 5)
+	pad.add_theme_constant_override("margin_right", 5)
+	pad.add_theme_constant_override("margin_top", 3)
+	pad.add_theme_constant_override("margin_bottom", 3)
+	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pad.add_child(row)
+	scroll.add_child(pad)
 	row.add_child(UiKit.spacer())
 	for i in range(sorted_members.size() - 1, -1, -1):
 		var av := PartyAvatar.new()
@@ -175,61 +186,66 @@ func _member_row(m: Dictionary) -> PanelContainer:
 		int(m.get("level", 1)), int(stats.get("hp_max", 1)), float(stats.get("dps", 0.0))],
 		10, UiKit.COL_MUTED))
 	row.add_child(info)
-	var equip := UiKit.button("装备", 10)
+	var equip := UiKit.button("", 10)
+	equip.icon = UiKit.icon("chest")
+	equip.expand_icon = true
+	equip.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equip.custom_minimum_size = Vector2(36, 30)
+	equip.tooltip_text = "查看装备"
 	equip.pressed.connect(func(): _show_equipment(m))
 	row.add_child(equip)
 	return p
 
 
 func _show_equipment(m: Dictionary) -> void:
-	_hide_inspect()
-	_inspect = UiKit.panel(UiKit.COL_PANEL, UiKit.COL_GOLD_DIM, 2, 12)
-	_inspect.z_index = 50
-	_inspect.position = Vector2(130, 85)
-	_inspect.size = Vector2(360, 300)
-	add_child(_inspect)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 4)
-	_inspect.add_child(v)
+	_view_member = m.duplicate(true)
+	refresh()
+
+
+func _build_equipment_view(box: VBoxContainer) -> void:
 	var head := HBoxContainer.new()
-	head.add_child(UiKit.label("%s 的装备" % String(m.get("name", "玩家")), 14, UiKit.COL_GOLD))
+	head.add_child(UiKit.label("%s 的装备" % String(_view_member.get("name", "玩家")), 14, UiKit.COL_GOLD))
 	head.add_child(UiKit.spacer())
-	var close := UiKit.button("×", 12)
-	close.custom_minimum_size = Vector2(26, 24)
-	close.pressed.connect(_hide_inspect)
-	head.add_child(close)
-	v.add_child(head)
-	v.add_child(UiKit.hsep())
-	var eq: Dictionary = m.get("equipment", {})
-	var shown := 0
+	var back := UiKit.button("返回队伍", 11)
+	back.pressed.connect(_close_equipment_view)
+	head.add_child(back)
+	box.add_child(head)
+	box.add_child(UiKit.hsep())
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(350, 340)
+	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(holder)
+	var doll := PaperDoll.new()
+	holder.add_child(doll)
+	var lv := UiKit.label("装备等级 %d" % int(_view_member.get("level", 1)), 10, UiKit.COL_GOLD)
+	lv.position = Vector2(6, 4)
+	holder.add_child(lv)
+	var eq: Dictionary = _view_member.get("equipment", {})
 	for key in Data.EQUIP_ORDER:
-		if eq.get(key) == null:
-			continue
-		var d: Dictionary = eq[key]
-		var item := GameItem.from_dict(d)
-		var b := UiKit.button("%s · %s" % [Data.SLOT_INFO.get(key, {}).get("name", key), item.item_name], 10)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_color_override("font_color", item.quality_color())
-		var item_copy := item
-		b.pressed.connect(func():
-			_tip.show_item(item_copy, null, String(m.get("class_id", "warrior")), "", false)
-			_tip.position = _inspect.position + Vector2(20, 30))
-		b.mouse_entered.connect(func():
-			_tip.show_item(item_copy, null, String(m.get("class_id", "warrior")), "", false)
-			_tip.position = _inspect.position + Vector2(20, 30))
-		b.mouse_exited.connect(func(): _tip.hide_tip())
-		v.add_child(b)
-		shown += 1
-	if shown == 0:
-		v.add_child(UiKit.label("没有装备", 11, UiKit.COL_MUTED))
+		var item: GameItem = null
+		var d: Variant = eq.get(key)
+		if d is Dictionary:
+			item = GameItem.from_dict(d)
+		var slot := ItemSlot.new(BackpackWindow.EQ_CELL, key)
+		slot.position = BackpackWindow.EQ_POS.get(key, Vector2.ZERO)
+		slot.set_item(item)
+		slot.hovered.connect(func(_s, it): _show_team_item_tip(it))
+		slot.unhovered.connect(func(_s): _tip.hide_tip())
+		slot.clicked.connect(func(_s, it, _b): _show_team_item_tip(it))
+		holder.add_child(slot)
+	_footer_left.add_child(UiKit.label("仅显示装备栏", 10, UiKit.COL_MUTED))
 
 
-func _hide_inspect() -> void:
-	if _inspect != null:
-		_inspect.queue_free()
-		_inspect = null
-	if _tip != null:
-		_tip.hide_tip()
+func _show_team_item_tip(item: GameItem) -> void:
+	if item == null:
+		return
+	_tip.show_item(item, null, String(_view_member.get("class_id", "warrior")), "", false)
+	_tip.global_position = get_global_mouse_position() + Vector2(16, 12)
+
+
+func _close_equipment_view() -> void:
+	_view_member = {}
+	refresh()
 
 
 func _room_row(room: Dictionary) -> PanelContainer:

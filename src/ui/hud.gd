@@ -5,6 +5,9 @@ var world: Node
 
 var _bottom: PanelContainer
 var _status_label: Label
+var _collapse_btn: Button
+var _team_badge: PanelContainer
+var _team_badge_label: Label
 var _buttons: Dictionary = {}
 var _button_icons: Dictionary = {}
 var _windows: Dictionary = {}
@@ -72,12 +75,27 @@ func _build_bottom() -> void:
 		btn.add_child(center)
 		var icon := TextureRect.new()
 		icon.texture = UiKit.icon(String(d[1]))
-		icon.custom_minimum_size = Vector2(36 if key == "bag" else 32, 36 if key == "bag" else 32)
+		icon.custom_minimum_size = Vector2(32, 32)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		center.add_child(icon)
+		if key == "team":
+			_team_badge = PanelContainer.new()
+			_team_badge.add_theme_stylebox_override("panel",
+				UiKit.stylebox(Color(0.035, 0.043, 0.063, 0.98), UiKit.COL_GOLD, 1, 0))
+			_team_badge.custom_minimum_size = Vector2(16, 14)
+			_team_badge.size = Vector2(16, 14)
+			_team_badge.position = Vector2(23, 25)
+			_team_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_team_badge.visible = false
+			_team_badge_label = UiKit.label("", 8, UiKit.COL_GOLD)
+			_team_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			_team_badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			_team_badge_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_team_badge.add_child(_team_badge_label)
+			btn.add_child(_team_badge)
 		_buttons[key] = btn
 		_button_icons[key] = icon
 
@@ -88,6 +106,22 @@ func _build_bottom() -> void:
 	_status_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(_status_label)
+
+	_collapse_btn = UiKit.button("▾", 10)
+	_collapse_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_collapse_btn.offset_left = 406
+	_collapse_btn.offset_right = 430
+	_collapse_btn.offset_top = -72
+	_collapse_btn.offset_bottom = -56
+	_collapse_btn.custom_minimum_size = Vector2(24, 16)
+	_collapse_btn.tooltip_text = "收起底部按钮"
+	_collapse_btn.add_theme_color_override("font_color", UiKit.COL_GOLD)
+	_collapse_btn.add_theme_stylebox_override("normal",
+		UiKit.stylebox(Color(0.035, 0.043, 0.063, 0.92), UiKit.COL_BORDER_DIM, 1, 1))
+	_collapse_btn.add_theme_stylebox_override("hover",
+		UiKit.stylebox(Color(0.10, 0.12, 0.16, 0.98), UiKit.COL_GOLD, 1, 1))
+	_collapse_btn.pressed.connect(_toggle_bottom)
+	add_child(_collapse_btn)
 
 
 func _build_windows() -> void:
@@ -171,17 +205,29 @@ func update_badges() -> void:
 		bag_icon.modulate = UiKit.COL_RED if full else Color.WHITE
 	if bag_btn != null:
 		bag_btn.tooltip_text = "背包（已满）" if full else "背包（B）"
+	if _team_badge != null:
+		_team_badge.visible = Net.in_party
+		if _team_badge_label != null:
+			_team_badge_label.text = str(maxi(1, Net.members.size()))
+	var team_btn: Button = _buttons.get("team")
+	if team_btn != null:
+		team_btn.tooltip_text = "组队（T） · %d 人" % Net.members.size() if Net.in_party else "组队（T）"
+
+
+func _toggle_bottom() -> void:
+	if _bottom == null:
+		return
+	_bottom.visible = not _bottom.visible
+	if _collapse_btn != null:
+		_collapse_btn.text = "▴" if not _bottom.visible else "▾"
+		_collapse_btn.tooltip_text = "展开底部按钮" if not _bottom.visible else "收起底部按钮"
 
 
 func update_status_line() -> void:
 	if _status_label == null:
 		return
 	var text := "Lv.%d" % Game.level
-	if Net.in_party:
-		text += " · 队伍 %d 人" % Net.members.size()
-		if not Game.current_dungeon.is_empty():
-			text += " · " + Data.dungeon_title(Game.current_dungeon)
-	elif Game.current_dungeon.is_empty():
+	if Game.current_dungeon.is_empty():
 		text += " · 未选择副本"
 	elif String(Game.current_dungeon.get("kind", "normal")) == "boss":
 		text += " · 首领 Lv.%d" % int(Game.current_dungeon.get("level", 1))
@@ -326,6 +372,7 @@ func _close_all_now() -> void:
 func _on_party_changed() -> void:
 	if world != null:
 		world.set_party_members(Net.members)
+	update_badges()
 	update_status_line()
 	if _team != null and _team.visible:
 		_team.refresh()
