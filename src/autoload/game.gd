@@ -901,6 +901,7 @@ func add_exp(amount: int) -> void:
 		level_up.emit(level)
 		toast.emit("升级！现在是 Lv.%d" % level, Color("#ffd76a"))
 		stats_changed.emit()
+		save_game()
 	_dirty = true
 
 

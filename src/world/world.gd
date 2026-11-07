@@ -183,6 +183,8 @@ func start_dungeon(d: Dictionary, auto_continue: bool = false) -> void:
 		else:
 			hud.add_log("进入 %s（%s）" % [title, Data.DIFFICULTIES[d["difficulty"]]["name"]], UiKit.COL_GOLD)
 	var cleared: bool = await _run_dungeon(d)
+	if cleared:
+		Game.save_game()
 	if _player_bar != null:
 		_player_bar.visible = false
 	if _shield_bar != null:
