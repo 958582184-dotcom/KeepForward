@@ -37,6 +37,7 @@ func _ready() -> void:
 	hud.world = world
 	add_child(hud)
 	world.hud = hud
+	hud.window_changed.connect(_update_mouse_passthrough)
 
 	if _shot != "":
 		_run_shot()
@@ -68,6 +69,10 @@ func _ready() -> void:
 
 	if "--passthroughtest" in args:
 		_run_passthrough_test()
+		return
+
+	if "--infotest" in args:
+		_run_infotest()
 		return
 
 	if "--battletest" in args:
@@ -134,41 +139,10 @@ func _update_mouse_passthrough() -> void:
 		return
 	if hud == null:
 		return
-	var base := _base_passthrough_polygon()
-	var win := _open_window_rect()
-	if win.size == Vector2.ZERO:
-		_set_mouse_passthrough(base)
-		return
-	if win.position.y + win.size.y >= World.GROUND_Y - 2.0:
+	if hud.has_open_window():
 		_set_mouse_passthrough(PackedVector2Array())
 		return
-	var left := World.HORIZON_RECT.position.x
-	var right := World.HORIZON_RECT.position.x + World.HORIZON_RECT.size.x
-	var top := World.GROUND_Y
-	var bottom := 720.0 if hud._bottom != null and hud._bottom.visible else World.GROUND_Y + World.HORIZON_RECT.size.y
-	var char_left := World.CHAR_X - 35.0
-	var char_right := World.CHAR_X + 35.0
-	var char_top := top - World.CHAR_SIZE - 26.0
-	var cx := clampf(win.get_center().x, 650.0, right - 10.0)
-	var pts := PackedVector2Array([
-		Vector2(win.position.x, win.position.y),
-		Vector2(win.position.x + win.size.x, win.position.y),
-		Vector2(win.position.x + win.size.x, win.position.y + win.size.y),
-		Vector2(cx + 2.0, win.position.y + win.size.y),
-		Vector2(cx + 2.0, top),
-		Vector2(right, top),
-		Vector2(right, bottom),
-		Vector2(left, bottom),
-		Vector2(left, top),
-		Vector2(char_left, top),
-		Vector2(char_left, char_top),
-		Vector2(char_right, char_top),
-		Vector2(char_right, top),
-		Vector2(cx - 2.0, top),
-		Vector2(cx - 2.0, win.position.y + win.size.y),
-		Vector2(win.position.x, win.position.y + win.size.y),
-	])
-	_set_mouse_passthrough(pts)
+	_set_mouse_passthrough(_base_passthrough_polygon())
 
 
 func _base_passthrough_polygon() -> PackedVector2Array:
@@ -377,6 +351,17 @@ func _run_passthrough_test() -> void:
 	await get_tree().create_timer(0.6).timeout
 	_update_mouse_passthrough()
 	print("PASSTHROUGH points=%s window=%s" % [str(_passthrough_points.size()), str(DisplayServer.window_get_size())])
+	await get_tree().create_timer(4.0).timeout
+	get_tree().quit()
+
+
+func _run_infotest() -> void:
+	Game.new_game("warrior")
+	world.set_class("warrior")
+	await get_tree().create_timer(0.6).timeout
+	hud.toggle_window("info")
+	await get_tree().create_timer(0.4).timeout
+	print("INFOTEST current=%s info=%s pass=%s" % [str(hud._current), str(hud._info.visible), str(_passthrough_points.size())])
 	await get_tree().create_timer(4.0).timeout
 	get_tree().quit()
 

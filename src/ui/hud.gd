@@ -1,6 +1,8 @@
 class_name HUD
 extends CanvasLayer
 
+signal window_changed
+
 var world: Node
 
 var _bottom: PanelContainer
@@ -109,19 +111,19 @@ func _build_bottom() -> void:
 	_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(_status_label)
 
-	_collapse_btn = UiKit.button("▾", 8)
+	_collapse_btn = UiKit.button("▼", 9)
 	_collapse_btn.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_collapse_btn.offset_left = 398
-	_collapse_btn.offset_right = 438
-	_collapse_btn.offset_top = -76
+	_collapse_btn.offset_left = 396
+	_collapse_btn.offset_right = 440
+	_collapse_btn.offset_top = -78
 	_collapse_btn.offset_bottom = -64
-	_collapse_btn.custom_minimum_size = Vector2(40, 12)
+	_collapse_btn.custom_minimum_size = Vector2(44, 14)
 	_collapse_btn.tooltip_text = "收起底部按钮"
 	_collapse_btn.add_theme_color_override("font_color", UiKit.COL_GOLD)
 	_collapse_btn.add_theme_stylebox_override("normal",
-		UiKit.stylebox(Color(0.035, 0.043, 0.063, 0.92), UiKit.COL_BORDER_DIM, 1, 1))
+		UiKit.stylebox(Color(0.23, 0.28, 0.34, 0.98), Color(0.48, 0.40, 0.28, 0.95), 1, 1))
 	_collapse_btn.add_theme_stylebox_override("hover",
-		UiKit.stylebox(Color(0.10, 0.12, 0.16, 0.98), UiKit.COL_GOLD, 1, 1))
+		UiKit.stylebox(Color(0.32, 0.38, 0.46, 1.0), UiKit.COL_GOLD, 1, 1))
 	_collapse_btn.pressed.connect(_toggle_bottom)
 	add_child(_collapse_btn)
 
@@ -221,8 +223,9 @@ func _toggle_bottom() -> void:
 		return
 	_bottom.visible = not _bottom.visible
 	if _collapse_btn != null:
-		_collapse_btn.text = "▴" if not _bottom.visible else "▾"
+		_collapse_btn.text = "▲" if not _bottom.visible else "▼"
 		_collapse_btn.tooltip_text = "展开底部按钮" if not _bottom.visible else "收起底部按钮"
+	window_changed.emit()
 
 
 func update_status_line() -> void:
@@ -290,11 +293,14 @@ func toggle_window(name: String) -> void:
 		if w.visible:
 			w.close()
 		else:
+			_current = w
 			w.open()
 			w.refresh()
+		window_changed.emit()
 		return
 	if w.visible:
 		w.close()
+		window_changed.emit()
 		return
 	for key in ["bag", "dungeon", "more", "team"]:
 		if key == name:
@@ -304,6 +310,7 @@ func toggle_window(name: String) -> void:
 			other.close()
 	_current = w
 	w.open()
+	window_changed.emit()
 
 
 func close_current() -> void:
@@ -328,6 +335,7 @@ func refresh_dungeon() -> void:
 
 
 func _on_window_closed(_name: String) -> void:
+	window_changed.emit()
 	if has_open_window():
 		return
 	_current = null
@@ -369,6 +377,7 @@ func _close_all_now() -> void:
 		if w != null:
 			w.visible = false
 	_current = null
+	window_changed.emit()
 
 
 func _on_party_changed() -> void:
