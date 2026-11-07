@@ -26,6 +26,7 @@ var _team_shields: Dictionary = {}
 var _team_hp_max: Dictionary = {}
 var _combat_hp := 0.0
 var _combat_hp_max := 0.0
+var _carry_hp := -1.0
 var _camera: Camera2D
 var _busy := false
 var _time := 0.0
@@ -155,9 +156,10 @@ func set_class(cid: String) -> void:
 
 # ---------- 副本 ----------
 
-func start_dungeon(d: Dictionary) -> void:
+func start_dungeon(d: Dictionary, auto_continue: bool = false) -> void:
 	if _busy:
 		return
+	var level_at_start := Game.level
 	_auto_token += 1
 	_busy = true
 	_set_character_idle(false)
@@ -167,6 +169,9 @@ func start_dungeon(d: Dictionary) -> void:
 	var is_boss_run: bool = String(d.get("kind", "normal")) == "boss"
 	_combat_hp_max = float(Game.compute_stats().get("hp_max", 1.0))
 	_combat_hp = _combat_hp_max
+	if auto_continue and _carry_hp >= 0.0:
+		_combat_hp = clampf(_carry_hp, 1.0, _combat_hp_max)
+	_carry_hp = -1.0
 	_set_player_hp(_combat_hp, _combat_hp_max, true)
 	if _shield_bar != null:
 		_shield_bar.value = 0.0
@@ -186,7 +191,17 @@ func start_dungeon(d: Dictionary) -> void:
 		hud.clear_stage()
 	_busy = false
 	Game.set_busy(false)
-	_set_character_idle(true)
+	var auto_next := cleared and not Game.boss_ready() and Game.auto_mode != "off" and not Net.in_party
+	if auto_next:
+		if Game.level > level_at_start:
+			_combat_hp_max = float(Game.compute_stats().get("hp_max", _combat_hp_max))
+			_combat_hp = _combat_hp_max
+		else:
+			_combat_hp = clampf(maxf(_combat_hp, _combat_hp_max * 0.60), 1.0, _combat_hp_max)
+		_carry_hp = _combat_hp
+	else:
+		_carry_hp = -1.0
+	_set_character_idle(not auto_next)
 	Game.save_game()
 
 	if not cleared:
@@ -196,6 +211,10 @@ func start_dungeon(d: Dictionary) -> void:
 		return
 	if Game.auto_mode != "off":
 		await _wait(0.6)
+		if Game.auto_mode == "off":
+			_carry_hp = -1.0
+			_set_character_idle(true)
+			return
 		resume_auto(0.1)
 
 
@@ -206,8 +225,6 @@ func resume_auto(delay: float = 0.6) -> void:
 		return
 	if Game.boss_ready():
 		return
-	if hud != null and hud.has_open_window():
-		return
 	if Game.inventory_count() >= Data.INVENTORY_SIZE and not Game.auto_sell:
 		Game.toast.emit("背包已满，自动副本暂停", Color("#ff7b72"))
 		return
@@ -216,14 +233,14 @@ func resume_auto(delay: float = 0.6) -> void:
 	await get_tree().create_timer(delay / maxf(0.25, Game.speed_mult)).timeout
 	if token != _auto_token or _busy or Game.auto_mode == "off":
 		return
-	if hud != null and hud.has_open_window():
-		return
 	if Game.boss_ready():
 		return
 	var d: Dictionary = Game.pick_auto_dungeon()
 	if d.is_empty():
+		_carry_hp = -1.0
+		_set_character_idle(true)
 		return
-	start_dungeon(d)
+	start_dungeon(d, true)
 
 
 func _run_dungeon(d: Dictionary) -> bool:
