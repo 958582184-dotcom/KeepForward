@@ -14,7 +14,6 @@ var _buttons: Dictionary = {}
 var _button_icons: Dictionary = {}
 var _windows: Dictionary = {}
 var _current: BaseWindow = null
-var _manual_started := false
 var _modal: Control
 var _modal_open := false
 
@@ -401,12 +400,9 @@ func _on_window_closed(_name: String) -> void:
 	if has_open_window():
 		return
 	_current = null
-	if world != null and Game.auto_mode != "off":
-		world.resume_auto(0.8)
 
 
 func _start_dungeon(d: Dictionary) -> void:
-	_manual_started = true
 	_close_all_now()
 	if Net.in_party:
 		if Net.is_leader():
@@ -419,7 +415,6 @@ func _start_dungeon(d: Dictionary) -> void:
 
 
 func _start_boss() -> void:
-	_manual_started = true
 	_close_all_now()
 	if Net.in_party:
 		if Net.is_leader():
