@@ -58,6 +58,10 @@ func _refresh_body(box: VBoxContainer) -> void:
 	sell_all.tooltip_text = "出售背包中所有未锁定且未穿戴的装备"
 	sell_all.pressed.connect(func(): Game.sell_all_unlocked())
 	_footer_left.add_child(sell_all)
+	var dismantle_all := UiKit.button("全部分解", 10)
+	dismantle_all.tooltip_text = "分解背包中所有未锁定且未穿戴的装备"
+	dismantle_all.pressed.connect(func(): Game.dismantle_all_unlocked())
+	_footer_left.add_child(dismantle_all)
 
 	var title_row := HBoxContainer.new()
 	title_row.add_child(UiKit.label("背包", 16, UiKit.COL_GOLD))

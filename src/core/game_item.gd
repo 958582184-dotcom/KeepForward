@@ -28,7 +28,16 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 	it.uid = _uid_seq
 	_uid_seq += 1
 	it.ilvl = maxi(1, level)
-	it.req_level = 1 if source_tag == "starter" else Data.equip_tier_floor(level)
+	if source_tag == "starter":
+		it.req_level = 1
+	elif source_tag == "shop":
+		it.req_level = Data.equip_tier_floor(level)
+	else:
+		var lower := Data.equip_tier_floor(level)
+		var upper := lower
+		if level % 5 != 0:
+			upper = lower + 5
+		it.req_level = lower if lower == upper or rng.randf() < 0.5 else upper
 	it.quality = clampi(q, 0, 4)
 	it.source = source_tag
 	it.slot = slot_hint if slot_hint != "" else _pick_slot(rng)

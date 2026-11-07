@@ -266,7 +266,7 @@ func _run_dungeon(d: Dictionary) -> bool:
 				hud.add_log("升级！生命回满", UiKit.COL_GREEN)
 		if hud != null:
 			hud.add_log("击败 Lv.%d %s  ·  +%d 金币  +%d 经验" % [lvl, label, gains["gold"], gains["exp"]],
-				UiKit.COL_GREEN)
+				UiKit.COL_GREEN, "battle")
 		_floating_text(root.position + Vector2(0, -70),
 			"+%d EXP   +%d 金币" % [gains["exp"], gains["gold"]], Color("#ffd76a"), 12)
 		await _fade_out(root, 0.30)
@@ -288,9 +288,9 @@ func _run_dungeon(d: Dictionary) -> bool:
 				hud.add_log("区域首领已击败 · 探索度清零", UiKit.COL_GOLD)
 			hud.add_log("状态已恢复", UiKit.COL_GREEN)
 			if loot_names.is_empty():
-				hud.add_log("副本完成 · 未掉落装备", UiKit.COL_GREEN)
+				hud.add_log("副本完成 · 未掉落装备", UiKit.COL_GREEN, "battle")
 			else:
-				hud.add_log("副本完成 · 获得装备：%s" % "、".join(loot_names), UiKit.COL_GREEN)
+				hud.add_log("副本完成 · 获得装备：%s" % "、".join(loot_names), UiKit.COL_GREEN, "battle")
 		await _wait(0.5)
 	return cleared
 
@@ -451,7 +451,8 @@ func _clash(root: Node2D, battle: Dictionary, label: String) -> void:
 			_spawn_slash(root.position + Vector2(_rng.randf_range(-20, 10), -h * 0.4))
 			spr.modulate = Color(1.8, 1.8, 1.8)
 			if hud != null:
-				hud.add_log("你 造成 %d 伤害%s" % [dmg, (" · " + note) if note != "" else ""], Color("#ffd76a"))
+				hud.add_log("你 造成 %d 伤害%s" % [dmg, (" · " + note) if note != "" else ""],
+					Color("#ffd76a"), "battle")
 				if note != "":
 					_floating_text(Vector2(CHAR_X, GROUND_Y - 82), note, Color("#8fd3c7"), 11)
 			await _wait(0.16)
@@ -466,7 +467,8 @@ func _clash(root: Node2D, battle: Dictionary, label: String) -> void:
 			if hud != null:
 				var absorb_text := (" · 护盾吸收 %d" % absorbed) if absorbed > 0 else ""
 				hud.add_log("%s 造成 %d 伤害%s · 生命 %d/%d" % [
-					label, mdmg, absorb_text, int(turn["player_hp"]), int(hp_max)], Color("#ff6b5e"))
+					label, mdmg, absorb_text, int(turn["player_hp"]), int(hp_max)],
+					Color("#ff6b5e"), "battle")
 			if _character != null:
 				_character.modulate = Color(1.0, 0.55, 0.5)
 			await _wait(0.14)
@@ -704,7 +706,7 @@ func start_team_battle(result: Dictionary) -> void:
 				var note := String(turn.get("note", ""))
 				if hud != null:
 					hud.add_log("%s 造成 %d 伤害%s" % [String(turn.get("actor_name", "队友")), dmg,
-						(" · " + note) if note != "" else ""], Color("#ffd76a"))
+						(" · " + note) if note != "" else ""], Color("#ffd76a"), "battle")
 				await _wait(0.10)
 			else:
 				var tid := str(int(turn.get("target_id", 0)))
@@ -727,7 +729,8 @@ func start_team_battle(result: Dictionary) -> void:
 						if int(m.get("id", 0)) == int(turn.get("target_id", 0)):
 							target_name = String(m.get("name", "队友"))
 							break
-					hud.add_log("敌人攻击 %s，造成 %d%s" % [target_name, mdmg, absorbed_text], Color("#ff6b5e"))
+					hud.add_log("敌人攻击 %s，造成 %d%s" % [target_name, mdmg, absorbed_text],
+						Color("#ff6b5e"), "battle")
 				await _wait(0.10)
 		if bool(mon.get("win", false)):
 			await _fade_out(root, 0.20)

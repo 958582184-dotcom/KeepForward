@@ -187,8 +187,8 @@ func _connect_game() -> void:
 		world.team_battle_finished.connect(_on_team_battle_finished)
 
 
-func add_log(text: String, color: Color = Color("#c8d2df")) -> void:
-	Game.push_log(text, color)
+func add_log(text: String, color: Color = Color("#c8d2df"), kind: String = "system") -> void:
+	Game.push_log(text, color, kind)
 
 
 func set_stage(_text: String) -> void:
@@ -469,7 +469,9 @@ func _on_team_battle_finished(win: bool) -> void:
 			if d is Dictionary:
 				lines.append(String(d.get("name", "装备")))
 		if not lines.is_empty():
-			add_log("个人掉落：%s" % "、".join(lines), UiKit.COL_GREEN)
+			add_log("个人掉落：%s" % "、".join(lines), UiKit.COL_GREEN, "battle")
+		add_log("战斗奖励：+%d 经验  +%d 金币" % [int(reward.get("exp", 0)), int(reward.get("gold", 0))],
+			UiKit.COL_GREEN, "battle")
 	if world != null:
 		world.set_party_members(Net.members)
 	Net.on_team_battle_finished(win)

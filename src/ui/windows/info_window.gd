@@ -19,8 +19,8 @@ func _after_build() -> void:
 	_footer_left.add_child(clear_btn)
 
 
-func _on_log_added(_text: String, _color: Color) -> void:
-	if not visible or _refresh_queued:
+func _on_log_added(_text: String, _color: Color, kind: String) -> void:
+	if not visible or _refresh_queued or kind != "battle":
 		return
 	_refresh_queued = true
 	await get_tree().create_timer(0.18).timeout
@@ -45,13 +45,17 @@ func _refresh_body(box: VBoxContainer) -> void:
 	rv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.add_child(rv)
 
-	if Game.log_history.is_empty():
-		rv.add_child(UiKit.label("还没有记录。", 11, UiKit.COL_DIM))
+	var shown := 0
 	for entry in Game.log_history:
+		if String(entry.get("kind", "system")) != "battle":
+			continue
 		var l := UiKit.label(String(entry["text"]), 11, entry["color"])
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rv.add_child(l)
+		shown += 1
+	if shown == 0:
+		rv.add_child(UiKit.label("暂无伤害、掉落或经验记录。", 11, UiKit.COL_DIM))
 	_scroll_to_bottom()
 
 

@@ -401,20 +401,25 @@ static func dungeon_level_range(player_level: int, area: Dictionary) -> Vector2i
 	return Vector2i(lo, hi)
 
 
+static func enemy_level_exponent(level: int) -> float:
+	var tier := maxi(0, int(level / 5.0))
+	return pow(1.025, float(maxi(0, level - 1))) * (1.0 + 0.08 * float(tier))
+
+
 static func monster_hp(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
-	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"])
+	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"]) * enemy_level_exponent(level)
 
 
 static func monster_damage(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
-	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"])
+	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"]) * enemy_level_exponent(level)
 
 
 static func monster_armor(level: int) -> float:
-	return 8.0 + 3.5 * level
+	return (8.0 + 3.5 * level) * enemy_level_exponent(level)
 
 
 static func exp_reward(type_id: String, level: int, diff: String) -> int:

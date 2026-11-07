@@ -441,6 +441,13 @@ func _run_equiptest() -> void:
 	var low := GameItem.create(Game.rng, 20, 0, "warrior", "main", "shop")
 	Game.level = 10
 	print("EQUIPTEST use_req=%d at_lv10=%s" % [low.req_level, str(Game._can_use_item(low))])
+	var drop_reqs: Array = []
+	for i in 20:
+		var drop := GameItem.create_dungeon_drop(Game.rng, 17, 1, "warrior")
+		if not drop_reqs.has(drop.req_level):
+			drop_reqs.append(drop.req_level)
+	drop_reqs.sort()
+	print("EQUIPTEST drop17_reqs=%s" % str(drop_reqs))
 	get_tree().quit()
 
 

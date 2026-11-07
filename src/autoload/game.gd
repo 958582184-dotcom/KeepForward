@@ -12,7 +12,7 @@ signal toast(text, color)
 signal busy_changed(is_busy)
 signal auto_mode_changed(mode)
 signal area_changed(index)
-signal log_added(text, color)
+signal log_added(text, color, kind)
 signal metrics_changed
 
 const AUTO_MODES := ["repeat", "next", "off"]
@@ -559,11 +559,11 @@ func set_area(index: int) -> bool:
 	return true
 
 
-func push_log(text: String, color: Color = Color("#c8d2df")) -> void:
-	log_history.append({"text": text, "color": color})
+func push_log(text: String, color: Color = Color("#c8d2df"), kind: String = "system") -> void:
+	log_history.append({"text": text, "color": color, "kind": kind})
 	if log_history.size() > 250:
 		log_history.pop_front()
-	log_added.emit(text, color)
+	log_added.emit(text, color, kind)
 
 
 func clear_logs() -> void:
@@ -766,6 +766,25 @@ func sell_all_unlocked() -> void:
 	gold_changed.emit()
 	_dirty = true
 	toast.emit("一键出售 %d 件装备  +%d 金币" % [count, total], Color("#e0b45a"))
+
+
+func dismantle_all_unlocked() -> void:
+	var count := 0
+	var total := 0
+	for i in inventory.size():
+		var it: GameItem = inventory[i]
+		if it == null or it.locked:
+			continue
+		total += maxi(1, int(round(it.sell_value() * 0.5)))
+		inventory[i] = null
+		count += 1
+	if count == 0:
+		toast.emit("没有可分解的未锁定背包装备", Color("#c8d2df"))
+		return
+	materials += total
+	inventory_changed.emit()
+	_dirty = true
+	toast.emit("一键分解 %d 件装备  +%d 材料" % [count, total], Color("#8fd3c7"))
 
 
 func dismantle_item(item: GameItem) -> void:
