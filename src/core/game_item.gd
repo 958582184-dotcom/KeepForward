@@ -7,6 +7,7 @@ var uid: int = 0
 var item_name: String = ""
 var slot: String = "head"
 var ilvl: int = 1
+var req_level: int = 1
 var quality: int = 0
 var armor_type: String = ""
 var weapon_type: String = ""
@@ -27,6 +28,7 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 	it.uid = _uid_seq
 	_uid_seq += 1
 	it.ilvl = maxi(1, level)
+	it.req_level = 1 if source_tag == "starter" else Data.equip_tier_floor(level)
 	it.quality = clampi(q, 0, 4)
 	it.source = source_tag
 	it.slot = slot_hint if slot_hint != "" else _pick_slot(rng)
@@ -119,7 +121,8 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 		pool.erase(key)
 
 	it.item_name = _make_name(it, cls, rng)
-	it.price = int(round((40.0 + it.ilvl * 24.0) * float(Data.QUALITY_PRICE_MULT[it.quality])))
+	it.price = int(round((40.0 + it.ilvl * 24.0) * float(Data.QUALITY_PRICE_MULT[it.quality]) \
+		* (1.0 + 0.10 * float(it.ilvl) + 0.008 * float(it.ilvl * it.ilvl))))
 	return it
 
 
@@ -430,7 +433,7 @@ func score(class_id: String) -> float:
 
 func to_dict() -> Dictionary:
 	return {
-		"uid": uid, "name": item_name, "slot": slot, "ilvl": ilvl, "q": quality,
+		"uid": uid, "name": item_name, "slot": slot, "ilvl": ilvl, "rlvl": req_level, "q": quality,
 		"at": armor_type, "wt": weapon_type, "wmin": weapon_min, "wmax": weapon_max,
 		"stats": stats.duplicate(), "price": price, "src": source, "locked": locked,
 		"style": style, "rune": rune_stat,
@@ -444,6 +447,7 @@ static func from_dict(d: Dictionary) -> GameItem:
 	it.item_name = String(d.get("name", "物品"))
 	it.slot = String(d.get("slot", "head"))
 	it.ilvl = int(d.get("ilvl", 1))
+	it.req_level = int(d.get("rlvl", 1))
 	it.quality = int(d.get("q", 0))
 	it.armor_type = String(d.get("at", ""))
 	it.weapon_type = String(d.get("wt", ""))

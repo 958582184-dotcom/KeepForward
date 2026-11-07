@@ -38,6 +38,9 @@ func show_item(item: GameItem, compare: GameItem, class_id: String, hint: String
 	_box.add_child(title)
 	var sub := UiKit.label("装等 %d  ·  %s  ·  %s" % [item.ilvl, item.slot_name(), item.quality_name()], 12, UiKit.COL_MUTED)
 	_box.add_child(sub)
+	var can_use := Game.level >= item.req_level
+	_box.add_child(UiKit.label("穿戴等级 %d%s" % [item.req_level, "" if can_use else "（角色等级不足）"],
+		12, UiKit.COL_MUTED if can_use else UiKit.COL_RED))
 	_box.add_child(UiKit.hsep())
 
 	for key in ["strength", "agility", "intellect", "stamina"]:

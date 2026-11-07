@@ -440,11 +440,15 @@ func add_item(item: GameItem) -> bool:
 	return false
 
 
+func _can_use_item(item: GameItem) -> bool:
+	return item != null and int(item.req_level) <= level
+
+
 func receive_drop(item: GameItem) -> void:
 	if item == null or class_id == "":
 		return
 	var equipped := false
-	if auto_equip:
+	if auto_equip and _can_use_item(item):
 		var key := _auto_equip_key(item)
 		var old: GameItem = equipment.get(key)
 		if old == null or (not old.locked and item.score(class_id) > old.score(class_id) + 0.001):
@@ -603,6 +607,9 @@ func compare_item(item: GameItem) -> GameItem:
 func equip_item(item: GameItem) -> void:
 	if item == null or class_id == "":
 		return
+	if not _can_use_item(item):
+		toast.emit("%s 需要角色等级 %d" % [item.item_name, item.req_level], Color("#ff7b72"))
+		return
 	var idx := -1
 	for i in inventory.size():
 		if inventory[i] == item:
@@ -639,7 +646,7 @@ func unequip(key: String) -> void:
 
 
 func can_equip_to(item: GameItem, key: String) -> bool:
-	if item == null:
+	if item == null or not _can_use_item(item):
 		return false
 	match item.slot:
 		"ring":
@@ -652,6 +659,9 @@ func can_equip_to(item: GameItem, key: String) -> bool:
 
 func equip_at(item: GameItem, index: int, key: String) -> bool:
 	if item == null or index < 0 or index >= inventory.size() or inventory[index] != item:
+		return false
+	if not _can_use_item(item):
+		toast.emit("%s 需要角色等级 %d" % [item.item_name, item.req_level], Color("#ff7b72"))
 		return false
 	if not can_equip_to(item, key):
 		toast.emit("这件装备不能放入该栏位", Color("#ff7b72"))
@@ -1167,9 +1177,9 @@ func _check_shop_reset() -> void:
 
 func _generate_shop_stock() -> void:
 	shop_stock.clear()
+	var levels := Data.shop_equip_levels(level)
 	for i in Data.SHOP_STOCK_SIZE:
-		var lvl := clampi(level + rng.randi_range(-Data.SHOP_LEVEL_RANGE, Data.SHOP_LEVEL_RANGE),
-			1, Data.CONTENT_MAX_LEVEL)
+		var lvl := int(levels[rng.randi_range(0, levels.size() - 1)])
 		var q := Data.roll_quality(rng, Data.SHOP_QUALITY_WEIGHTS, 0)
 		var it := GameItem.create(rng, lvl, q, class_id, "", "shop")
 		it.shop_factor = 1.0 + rng.randf_range(-0.10, 0.10)

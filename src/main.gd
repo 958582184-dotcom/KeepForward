@@ -83,6 +83,10 @@ func _ready() -> void:
 		_run_teambalancetest()
 		return
 
+	if "--equiptest" in args:
+		_run_equiptest()
+		return
+
 	if "--battletest" in args:
 		_run_battletest()
 		return
@@ -419,6 +423,24 @@ func _run_teambalancetest() -> void:
 			var result := TeamBattle.build(d, [p1, p2], Game.rng, lv)
 			print("TEAMBALANCE lv=%d q=%d dungeon=%d win=%s" % [
 				lv, quality, target_level, str(result.get("win", false))])
+	get_tree().quit()
+
+
+func _run_equiptest() -> void:
+	for lv in [1, 8, 23, 25]:
+		print("EQUIPTEST shop_levels lv=%d levels=%s" % [lv, str(Data.shop_equip_levels(lv))])
+	Game.new_game("warrior")
+	Game.level = 23
+	Game._generate_shop_stock()
+	var reqs: Array = []
+	var prices: Array = []
+	for it in Game.shop_stock:
+		reqs.append(it.req_level)
+		prices.append(it.shop_price_value())
+	print("EQUIPTEST shop23 reqs=%s min_price=%d max_price=%d" % [str(reqs), prices.min(), prices.max()])
+	var low := GameItem.create(Game.rng, 20, 0, "warrior", "main", "shop")
+	Game.level = 10
+	print("EQUIPTEST use_req=%d at_lv10=%s" % [low.req_level, str(Game._can_use_item(low))])
 	get_tree().quit()
 
 

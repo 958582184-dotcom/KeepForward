@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.58.0"
+const VERSION := "0.59.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -454,6 +454,30 @@ static func level_gap_multipliers(party_level: int, mon_level: int) -> Vector2:
 	var hp_mult := 1.0 + 0.12 * float(gap) + 0.55 * float(tier)
 	var dmg_mult := 1.0 + 0.10 * float(gap) + 0.45 * float(tier)
 	return Vector2(hp_mult, dmg_mult)
+
+
+static func equip_tier_floor(level: int) -> int:
+	if level <= 1:
+		return 1
+	return maxi(1, int(level / 5.0) * 5)
+
+
+static func shop_equip_levels(player_level: int) -> Array[int]:
+	var base := equip_tier_floor(player_level)
+	var lo := base
+	if player_level >= 5 and player_level % 5 == 0:
+		lo = maxi(1, base - 5)
+	var hi := base + 10
+	var levels: Array[int] = []
+	if lo <= 1:
+		levels.append(1)
+	var t := maxi(5, int(ceil(float(lo) / 5.0)) * 5)
+	while t <= hi:
+		levels.append(t)
+		t += 5
+	if levels.is_empty():
+		levels.append(base)
+	return levels
 
 
 static func dungeon_quality_shift(mon_level: int, player_level: int, diff: String) -> int:
