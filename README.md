@@ -1,8 +1,8 @@
-# 余烬行者
+# KeepForward
 
 桌面宠物式像素挂机小游戏。没有技能、没有手动战斗，只有角色天赋、装备词条和一路变强的数字。
 
-- 版本：0.43.0
+- 版本：0.44.0
 - 引擎：Godot 4.7.2（GL Compatibility）
 - 逻辑分辨率：1280 × 720
 - 实际窗口：960 × 540，**无边框、透明、可拖动**
@@ -216,4 +216,4 @@ Godot --headless --path . -- --balancetest
 Godot --path . -- --shot=bag
 ```
 
-测试后清理存档：`%APPDATA%\Godot\app_userdata\余烬行者\ember_walker_save.json`。
+测试后清理存档：`%APPDATA%\Godot\app_userdata\KeepForward\ember_walker_save.json`。旧版「余烬行者」存档会在首次启动时自动迁移到 KeepForward 目录。

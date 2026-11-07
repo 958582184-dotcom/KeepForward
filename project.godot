@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="余烬行者"
+config/name="KeepForward"
 config/description="挂机刷装备的像素放置游戏"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -25,18 +25,17 @@ Net="*res://src/autoload/net.gd"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/size/borderless=true
 window/size/window_width_override=960
 window/size/window_height_override=540
-window/size/borderless=true
-window/per_pixel_transparency/allowed=true
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
+window/per_pixel_transparency/allowed=true
 
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0, 0, 0, 0)
 2d/snap/snap_2d_transforms_to_pixel=true
 2d/snap/snap_2d_vertices_to_pixel=true
-environment/defaults/default_clear_color=Color(0, 0, 0, 0)

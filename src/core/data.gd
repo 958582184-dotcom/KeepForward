@@ -1,8 +1,8 @@
 class_name Data
 extends RefCounted
 
-const TITLE := "余烬行者"
-const VERSION := "0.43.0"
+const TITLE := "KeepForward"
+const VERSION := "0.44.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60

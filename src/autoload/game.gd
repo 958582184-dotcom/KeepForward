@@ -63,6 +63,7 @@ func _ready() -> void:
 	rng.randomize()
 	inventory.resize(Data.INVENTORY_SIZE)
 	_clear_equipment()
+	_migrate_old_save()
 	loaded = load_game()
 	if loaded:
 		refresh_dungeons(false)
@@ -82,6 +83,24 @@ func _process(delta: float) -> void:
 
 
 # ---------- 新游戏 / 存档 ----------
+
+func _migrate_old_save() -> void:
+	if FileAccess.file_exists(Data.SAVE_PATH):
+		return
+	var base := OS.get_user_data_dir()
+	var old_path := base.get_base_dir().path_join("余烬行者").path_join("ember_walker_save.json")
+	if not FileAccess.file_exists(old_path):
+		return
+	var text := FileAccess.get_file_as_string(old_path)
+	if text.is_empty():
+		return
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://"))
+	var f := FileAccess.open(Data.SAVE_PATH, FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_string(text)
+	f.close()
+
 
 func has_save() -> bool:
 	return FileAccess.file_exists(Data.SAVE_PATH)
