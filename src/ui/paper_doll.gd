@@ -1,10 +1,14 @@
 class_name PaperDoll
 extends Control
 
+var _silhouette: Texture2D
+
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(350, 320)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_silhouette = load("res://assets/equipment_silhouette.png")
 
 
 func _draw() -> void:
@@ -13,8 +17,6 @@ func _draw() -> void:
 	var gold := Color(0.56, 0.42, 0.22, 1.0)
 	var gold_hi := Color(0.82, 0.65, 0.36, 1.0)
 	var outline := Color(0.25, 0.16, 0.08, 1.0)
-	var sil := Color(0.27, 0.20, 0.14, 1.0)
-	var sil_dark := Color(0.18, 0.12, 0.08, 1.0)
 
 	# 羊皮纸底与菱形暗纹
 	draw_rect(Rect2(0, 0, 350, 320), parchment)
@@ -33,50 +35,13 @@ func _draw() -> void:
 		draw_circle(c, 3.2, gold_hi)
 		draw_circle(c, 1.4, outline)
 
-	# 人物剪影：缩小居中，避开上/下槽位
-	draw_set_transform(Vector2(63, 59), 0.0, Vector2(0.68, 0.68))
-	_ellipse(Vector2(165, 302), Vector2(62, 9), Color(0.13, 0.08, 0.04, 0.48))
-	_ellipse(Vector2(165, 300), Vector2(48, 6), Color(0.10, 0.06, 0.03, 0.5))
-	# 腿
-	_limb(Vector2(151, 192), Vector2(147, 254), 16.0, sil, sil_dark)
-	_limb(Vector2(179, 192), Vector2(183, 254), 16.0, sil, sil_dark)
-	_limb(Vector2(147, 250), Vector2(145, 286), 14.0, sil, sil_dark)
-	_limb(Vector2(183, 250), Vector2(185, 286), 14.0, sil, sil_dark)
-	_ellipse(Vector2(138, 290), Vector2(23, 9), sil_dark)
-	_ellipse(Vector2(138, 288), Vector2(19, 7), sil)
-	_ellipse(Vector2(192, 290), Vector2(23, 9), sil_dark)
-	_ellipse(Vector2(192, 288), Vector2(19, 7), sil)
-	# 手臂
-	_limb(Vector2(131, 92), Vector2(104, 142), 15.0, sil, sil_dark)
-	_limb(Vector2(104, 142), Vector2(78, 177), 13.0, sil, sil_dark)
-	_limb(Vector2(199, 92), Vector2(226, 142), 15.0, sil, sil_dark)
-	_limb(Vector2(226, 142), Vector2(252, 177), 13.0, sil, sil_dark)
-	draw_circle(Vector2(75, 181), 10.0, sil_dark)
-	draw_circle(Vector2(75, 181), 7.5, sil)
-	draw_circle(Vector2(255, 181), 10.0, sil_dark)
-	draw_circle(Vector2(255, 181), 7.5, sil)
-	# 躯干与骨盆
-	var torso := PackedVector2Array([
-		Vector2(128, 76), Vector2(202, 76), Vector2(196, 108),
-		Vector2(190, 168), Vector2(140, 168), Vector2(134, 108),
-	])
-	_plate(torso, sil, sil_dark, 1.5)
-	var pelvis := PackedVector2Array([
-		Vector2(140, 166), Vector2(190, 166), Vector2(184, 198), Vector2(146, 198),
-	])
-	_plate(pelvis, sil, sil_dark, 1.5)
-	# 颈与头
-	draw_rect(Rect2(156, 48, 18, 24), sil)
-	draw_rect(Rect2(156, 48, 18, 24), sil_dark, false, 2.0)
-	draw_circle(Vector2(165, 28), 25.0, sil_dark)
-	draw_circle(Vector2(165, 28), 22.0, sil)
-	# 头部剪影轮廓，轻微发梢
-	draw_colored_polygon(PackedVector2Array([
-		Vector2(153, 10), Vector2(160, 1), Vector2(165, 8), Vector2(171, 0),
-		Vector2(177, 9), Vector2(184, 7), Vector2(180, 19), Vector2(151, 19),
-	]), sil)
-	draw_line(Vector2(151, 174), Vector2(189, 174), Color(0.15, 0.10, 0.06, 0.9), 2.0)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# 人物剪影：使用参考图中提取的人形
+	_ellipse(Vector2(175, 260), Vector2(58, 9), Color(0.13, 0.08, 0.04, 0.42))
+	_ellipse(Vector2(175, 259), Vector2(44, 6), Color(0.10, 0.06, 0.03, 0.45))
+	if _silhouette != null:
+		var sh := 200.0
+		var sw := sh * float(_silhouette.get_width()) / float(_silhouette.get_height())
+		draw_texture_rect(_silhouette, Rect2(Vector2(175.0 - sw * 0.5, 60), Vector2(sw, sh)), false)
 
 
 func _plate(points: PackedVector2Array, color: Color, edge: Color, width: float = 1.0) -> void:
