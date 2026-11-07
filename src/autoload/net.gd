@@ -81,7 +81,9 @@ func create_room(name: String, password: String = "") -> bool:
 	_stop_discovery_listener()
 	_start_discovery_sender()
 	party_changed.emit()
-	notice.emit("房间已创建：%s（端口 %d）" % [room_name, Data.TEAM_PORT], Color("#63c76a"))
+	var local_ip := _local_ipv4()
+	var ip_note := ("，本机 IP %s" % local_ip) if local_ip != "" else ""
+	notice.emit("房间已创建：%s（端口 %d%s）" % [room_name, Data.TEAM_PORT, ip_note], Color("#63c76a"))
 	return true
 
 
@@ -427,7 +429,36 @@ func _broadcast_room() -> void:
 		"has_password": _password != "",
 		"version": Data.VERSION,
 	}
-	_discovery_sender.put_packet(JSON.stringify(info).to_utf8_buffer())
+	var packet := JSON.stringify(info).to_utf8_buffer()
+	var targets := ["255.255.255.255"]
+	for addr in IP.get_local_addresses():
+		if not _is_ipv4(addr) or addr == "127.0.0.1" or addr.begins_with("169.254."):
+			continue
+		var parts := addr.split(".")
+		var subnet := "%s.%s.%s.255" % [parts[0], parts[1], parts[2]]
+		if not targets.has(subnet):
+			targets.append(subnet)
+	for target in targets:
+		_discovery_sender.set_dest_address(target, Data.TEAM_DISCOVERY_PORT)
+		_discovery_sender.put_packet(packet)
+
+
+func _is_ipv4(addr: String) -> bool:
+	var parts := addr.split(".")
+	if parts.size() != 4:
+		return false
+	for p in parts:
+		if not p.is_valid_int():
+			return false
+	return true
+
+
+func _local_ipv4() -> String:
+	for addr in IP.get_local_addresses():
+		if _is_ipv4(addr) and addr != "127.0.0.1" and not addr.begins_with("169.254."):
+			if addr.begins_with("192.168.") or addr.begins_with("10.") or addr.begins_with("172."):
+				return addr
+	return ""
 
 
 func _poll_discovery() -> void:
@@ -440,8 +471,6 @@ func _poll_discovery() -> void:
 		if typeof(obj) != TYPE_DICTIONARY:
 			continue
 		var info: Dictionary = obj
-		if String(info.get("version", "")) != Data.VERSION:
-			continue
 		var key := "%s:%d" % [ip, Data.TEAM_PORT]
 		info["ip"] = ip
 		info["port"] = Data.TEAM_PORT
