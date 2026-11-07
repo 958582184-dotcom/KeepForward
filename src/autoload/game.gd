@@ -680,6 +680,15 @@ func unequip(key: String) -> void:
 	_dirty = true
 
 
+func combat_power() -> int:
+	var total := 0.0
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it != null:
+			total += it.score(class_id)
+	return int(round(total))
+
+
 func can_equip_to(item: GameItem, key: String) -> bool:
 	if item == null or not _can_use_item(item):
 		return false

@@ -235,13 +235,13 @@ func _toggle_bottom() -> void:
 func update_status_line() -> void:
 	if _status_label == null:
 		return
-	var text := "Lv.%d" % Game.level
+	var text := ""
 	if Game.current_dungeon.is_empty():
-		text += " · 未选择副本"
+		text = "未选择副本"
 	elif String(Game.current_dungeon.get("kind", "normal")) == "boss":
-		text += " · 首领 Lv.%d" % int(Game.current_dungeon.get("level", 1))
+		text = "首领 Lv.%d" % int(Game.current_dungeon.get("level", 1))
 	else:
-		text += " · %s" % Data.dungeon_title(Game.current_dungeon)
+		text = "%s" % Data.dungeon_title(Game.current_dungeon)
 		var diff := String(Game.current_dungeon.get("difficulty", "normal"))
 		if diff != "normal":
 			text += " %s" % String(Data.DIFFICULTIES[diff]["name"])

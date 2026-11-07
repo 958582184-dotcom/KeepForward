@@ -197,6 +197,10 @@ func _refresh_body(box: VBoxContainer) -> void:
 	level_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	level_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	char_head.add_child(level_label)
+	var power_label := UiKit.label("战力 %s" % UiKit.num(Game.combat_power()), 11, UiKit.COL_GOLD)
+	power_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	power_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	char_head.add_child(power_label)
 	char_head.add_child(UiKit.spacer())
 	info.add_child(char_head)
 	var exp_bar := UiKit.progress(Game.exp, Game.exp_to_next(), 6, UiKit.COL_TEAL)
