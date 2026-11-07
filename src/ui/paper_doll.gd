@@ -36,12 +36,12 @@ func _draw() -> void:
 		draw_circle(c, 1.4, outline)
 
 	# 人物剪影：使用参考图中提取的人形
-	_ellipse(Vector2(175, 260), Vector2(58, 9), Color(0.13, 0.08, 0.04, 0.42))
-	_ellipse(Vector2(175, 259), Vector2(44, 6), Color(0.10, 0.06, 0.03, 0.45))
+	_ellipse(Vector2(175, 276), Vector2(60, 9), Color(0.13, 0.08, 0.04, 0.42))
+	_ellipse(Vector2(175, 275), Vector2(46, 6), Color(0.10, 0.06, 0.03, 0.45))
 	if _silhouette != null:
-		var sh := 200.0
+		var sh := 230.0
 		var sw := sh * float(_silhouette.get_width()) / float(_silhouette.get_height())
-		draw_texture_rect(_silhouette, Rect2(Vector2(175.0 - sw * 0.5, 60), Vector2(sw, sh)), false)
+		draw_texture_rect(_silhouette, Rect2(Vector2(175.0 - sw * 0.5, 45), Vector2(sw, sh)), false)
 
 
 func _plate(points: PackedVector2Array, color: Color, edge: Color, width: float = 1.0) -> void:

@@ -4,20 +4,20 @@ extends BaseWindow
 const EQ_CELL := 50
 const INV_CELL := 36
 const EQ_POS := {
-	"head": Vector2(152, 4),
-	"chest": Vector2(46, 78),
-	"legs": Vector2(62, 188),
-	"feet": Vector2(86, 242),
-	"hands": Vector2(8, 132),
-	"main": Vector2(56, 132),
-	"off": Vector2(246, 108),
-	"neck": Vector2(292, 30),
-	"ring1": Vector2(292, 84),
-	"ring2": Vector2(292, 138),
-	"trinket": Vector2(292, 192),
-	"rune1": Vector2(292, 246),
-	"rune2": Vector2(150, 270),
-	"rune3": Vector2(210, 270),
+	"head": Vector2(150, 50),
+	"chest": Vector2(150, 110),
+	"legs": Vector2(150, 170),
+	"feet": Vector2(150, 235),
+	"hands": Vector2(85, 150),
+	"main": Vector2(85, 95),
+	"off": Vector2(225, 105),
+	"neck": Vector2(285, 20),
+	"ring1": Vector2(285, 75),
+	"ring2": Vector2(285, 130),
+	"trinket": Vector2(285, 185),
+	"rune1": Vector2(30, 150),
+	"rune2": Vector2(30, 205),
+	"rune3": Vector2(30, 260),
 }
 
 var _tip: ItemTooltip
