@@ -35,65 +35,82 @@ func show_item(item: GameItem, compare: GameItem, class_id: String, hint: String
 		return
 	_clear()
 	visible = true
-	var title := UiKit.label(item.item_name, 18, item.quality_color())
-	_box.add_child(title)
-	var sub := UiKit.label("装等 %d  ·  %s  ·  %s" % [item.ilvl, item.slot_name(), item.quality_name()], 12, UiKit.COL_MUTED)
-	_box.add_child(sub)
-	var can_use := Game.level >= item.req_level
-	_box.add_child(UiKit.label("穿戴等级 %d%s" % [item.req_level, "" if can_use else "（角色等级不足）"],
-		12, UiKit.COL_MUTED if can_use else UiKit.COL_RED))
-	if item.set_id != "":
-		var sd := Data.set_def(item.set_id)
-		if not sd.is_empty():
-			var count := Game.set_piece_count(item.set_id, item.set_level) if set_count < 0 else set_count
-			var max_count := int(sd.get("max", 0))
-			_box.add_child(UiKit.label("套装：%s（%d/%d） · 装等%d" % [
-				item.set_name, count, max_count, item.set_level], 12, UiKit.COL_GOLD))
-			var bonuses: Dictionary = sd.get("bonuses", {})
-			for threshold in bonuses:
-				var active := count >= int(threshold)
-				_box.add_child(UiKit.label("%d 件：%s" % [int(threshold), Data.set_bonus_text(bonuses[threshold])],
-					10, UiKit.COL_GREEN if active else UiKit.COL_DIM))
-	_box.add_child(UiKit.hsep())
-
-	for key in ["strength", "agility", "intellect", "stamina"]:
-		if item.stats.has(key):
-			_box.add_child(UiKit.label(Data.fmt_primary(key, float(item.stats[key])), 14, UiKit.stat_color(key)))
-	if item.stats.has("armor"):
-		_box.add_child(UiKit.label("护甲 +%d" % int(item.stats["armor"]), 14, UiKit.COL_TEXT))
-	if item.weapon_max > 0.0:
-		_box.add_child(UiKit.label("伤害 %d - %d" % [int(item.weapon_min), int(item.weapon_max)], 14, UiKit.COL_TEXT))
-	for key in Data.AFFIX_KEYS:
-		if item.stats.has(key):
-			_box.add_child(UiKit.label(Data.fmt_affix(key, float(item.stats[key])), 14, UiKit.COL_TEAL))
-
 	if show_compare:
-		_box.add_child(UiKit.hsep())
-		if compare == null:
-			_box.add_child(UiKit.label("当前部位为空", 12, UiKit.COL_MUTED))
-			_box.add_child(UiKit.label("评分 +%.1f" % item.score(class_id), 13, UiKit.COL_GREEN))
+		var compare_row := HBoxContainer.new()
+		compare_row.add_theme_constant_override("separation", 14)
+		var left := VBoxContainer.new()
+		left.custom_minimum_size = Vector2(292, 0)
+		left.add_child(UiKit.label("当前装备", 12, UiKit.COL_GOLD))
+		_add_item_block(left, item, class_id)
+		_add_set_block(left, item, set_count)
+		compare_row.add_child(left)
+		var right := VBoxContainer.new()
+		right.custom_minimum_size = Vector2(292, 0)
+		right.add_child(UiKit.label("对应穿戴装备", 12, UiKit.COL_GOLD))
+		if compare != null:
+			_add_item_block(right, compare, class_id)
+			_add_set_block(right, compare, -1)
 		else:
-			var delta := item.score(class_id) - compare.score(class_id)
-			var delta_text := "评分 %+.1f" % delta
-			var color := UiKit.COL_GREEN if delta > 0.05 else (UiKit.COL_RED if delta < -0.05 else UiKit.COL_MUTED)
-			_box.add_child(UiKit.label(delta_text, 14, color))
-			var ilvl_delta := item.ilvl - compare.ilvl
-			_box.add_child(UiKit.label("装等 %+d  ·  当前：%s" % [ilvl_delta, compare.item_name], 11, UiKit.COL_MUTED))
+			right.add_child(UiKit.label("该部位未穿戴", 11, UiKit.COL_DIM))
+		compare_row.add_child(right)
+		_box.add_child(compare_row)
+	else:
+		_add_item_block(_box, item, class_id)
+		_add_set_block(_box, item, set_count)
 
 	if hint != "":
-		_box.add_child(UiKit.label(hint, 11, UiKit.COL_DIM))
-	_box.add_child(UiKit.hsep())
-	_box.add_child(UiKit.label("售价 %d 金币" % item.sell_value(), 11, UiKit.COL_GOLD))
-
-	_layout()
+		_box.add_child(UiKit.label(hint, 10, UiKit.COL_DIM))
+	_layout(show_compare)
 
 
-func _layout() -> void:
+func _add_item_block(parent: VBoxContainer, item: GameItem, class_id: String) -> void:
+	parent.add_child(UiKit.label(item.item_name, 16, item.quality_color()))
+	parent.add_child(UiKit.label("装等 %d  ·  %s  ·  %s" % [item.ilvl, item.slot_name(), item.quality_name()],
+		11, UiKit.COL_MUTED))
+	var can_use := Game.level >= item.req_level
+	parent.add_child(UiKit.label("穿戴等级 %d%s" % [item.req_level, "" if can_use else "（角色等级不足）"],
+		11, UiKit.COL_MUTED if can_use else UiKit.COL_RED))
+	parent.add_child(UiKit.hsep())
+	for key in ["strength", "agility", "intellect", "stamina"]:
+		if item.stats.has(key):
+			parent.add_child(UiKit.label(Data.fmt_primary(key, float(item.stats[key])), 12, UiKit.stat_color(key)))
+	if item.stats.has("armor"):
+		parent.add_child(UiKit.label("护甲 +%d" % int(item.stats["armor"]), 12, UiKit.COL_TEXT))
+	if item.weapon_max > 0.0:
+		parent.add_child(UiKit.label("伤害 %d - %d" % [int(item.weapon_min), int(item.weapon_max)], 12, UiKit.COL_TEXT))
+	for key in Data.AFFIX_KEYS:
+		if item.stats.has(key):
+			parent.add_child(UiKit.label(Data.fmt_affix(key, float(item.stats[key])), 12, UiKit.COL_TEAL))
+	parent.add_child(UiKit.label("售价 %d 金币" % item.sell_value(), 10, UiKit.COL_GOLD))
+
+
+func _add_set_block(parent: VBoxContainer, item: GameItem, set_count: int) -> void:
+	if item == null or item.set_id == "":
+		return
+	var sd := Data.set_def(item.set_id)
+	if sd.is_empty():
+		return
+	var count := Game.set_piece_count(item.set_id, item.set_level) if set_count < 0 else set_count
+	var max_count := int(sd.get("max", 0))
+	parent.add_child(UiKit.hsep())
+	parent.add_child(UiKit.label("套装：%s（%d/%d） · 装等%d" % [
+		item.set_name, count, max_count, item.set_level], 11, UiKit.COL_GOLD))
+	var bonuses: Dictionary = sd.get("bonuses", {})
+	for threshold in bonuses:
+		var active := count >= int(threshold)
+		var line := UiKit.label("%d 件：%s" % [int(threshold), Data.set_bonus_text(bonuses[threshold])],
+			10, UiKit.COL_GREEN if active else UiKit.COL_DIM)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		line.custom_minimum_size = Vector2(285, 0)
+		parent.add_child(line)
+
+
+func _layout(wide: bool) -> void:
 	var need := _box.get_combined_minimum_size()
-	var w := 330.0
-	var h := maxf(need.y + 24.0, 56.0)
-	size = Vector2(w, h)
+	var w := 620.0 if wide else 330.0
 	var vp := get_viewport_rect().size
+	var h := minf(maxf(need.y + 24.0, 56.0), vp.y - 16.0)
+	size = Vector2(w, h)
 	var mouse := get_viewport().get_mouse_position()
 	var pos := mouse + Vector2(18, 16)
 	if pos.x + w > vp.x - 8.0:
