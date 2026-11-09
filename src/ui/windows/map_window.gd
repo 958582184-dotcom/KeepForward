@@ -6,6 +6,7 @@ signal boss_requested
 
 var _auto_btn: Button
 var _auto_menu: PopupMenu
+var _footer_info: Label
 const AUTO_MODES := ["repeat", "next", "off"]
 const AUTO_LABELS := ["重复当前", "下一关", "关闭"]
 
@@ -24,6 +25,15 @@ func _after_build() -> void:
 	_auto_btn.tooltip_text = "选择自动副本模式"
 	_auto_btn.pressed.connect(_open_auto_menu)
 	_footer_left.add_child(_auto_btn)
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(10, 0)
+	_footer_left.add_child(gap)
+	_footer_info = UiKit.label("", 10, UiKit.COL_MUTED)
+	_footer_left.add_child(_footer_info)
+	Net.party_changed.connect(_update_footer_info)
+	Game.stats_changed.connect(_update_footer_info)
+	Game.equipment_changed.connect(_update_footer_info)
+	Game.level_up.connect(func(_lv): _update_footer_info())
 
 	_auto_menu = PopupMenu.new()
 	_auto_menu.add_item(AUTO_LABELS[0], 0)
@@ -53,6 +63,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	map.setup(Game.dungeons)
 	_add_refresh_overlay(map)
 	_update_auto_btn()
+	_update_footer_info()
 
 
 func _area_bar() -> PanelContainer:
@@ -168,6 +179,39 @@ func _center_label(text: String, font_size: int, color: Color) -> Label:
 func _switch_area(index: int) -> void:
 	if Game.set_area(index):
 		refresh()
+
+
+func _update_footer_info() -> void:
+	if _footer_info == null:
+		return
+	if Net.in_party and not Net.members.is_empty():
+		var levels := 0
+		var powers := 0
+		for m in Net.members:
+			levels += int(m.get("level", 1))
+			powers += _member_power(m)
+		var avg := float(levels) / float(Net.members.size())
+		_footer_info.text = "%d 人  ·  平均 Lv.%.1f  ·  总战力 %s" % [
+			Net.members.size(), avg, UiKit.num(powers)]
+	else:
+		_footer_info.text = "Lv.%d  ·  战力 %s" % [Game.level, UiKit.num(Game.combat_power())]
+	_footer_info.add_theme_color_override("font_color", UiKit.COL_GOLD if Net.in_party else UiKit.COL_MUTED)
+
+
+func _member_power(m: Dictionary) -> int:
+	var mid := int(m.get("id", 0))
+	if mid == Net.local_id:
+		return Game.combat_power()
+	if m.has("power"):
+		return int(m.get("power", 0))
+	var cid := String(m.get("class_id", "warrior"))
+	var eq: Dictionary = m.get("equipment", {})
+	var total := 0.0
+	for key in eq:
+		var d: Variant = eq[key]
+		if d is Dictionary:
+			total += GameItem.from_dict(d).score(cid)
+	return int(round(total))
 
 
 func _on_node_pressed(d: Dictionary) -> void:

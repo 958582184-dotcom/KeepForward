@@ -771,6 +771,15 @@ func combat_power() -> int:
 	return int(round(total))
 
 
+func reference_level() -> int:
+	if not Net.in_party or Net.members.is_empty():
+		return level
+	var sum := 0
+	for m in Net.members:
+		sum += int(m.get("level", 1))
+	return int(round(float(sum) / float(Net.members.size())))
+
+
 func can_equip_to(item: GameItem, key: String) -> bool:
 	if item == null or not _can_use_item(item):
 		return false
@@ -1069,6 +1078,7 @@ func profile_snapshot() -> Dictionary:
 		"class_id": String(ch.get("archetype", "warrior")),
 		"level": level,
 		"stats": st.duplicate(true),
+		"power": combat_power(),
 		"ilvl": int(st.get("ilvl", 1)),
 		"equipment": eq,
 		"school": String(main_item.style) if main_item != null else "",

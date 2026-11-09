@@ -68,7 +68,7 @@ func _add_node(d: Dictionary, pos: Vector2) -> void:
 	b.add_theme_stylebox_override("hover", UiKit.stylebox(Color(0.10, 0.085, 0.07, 0.98), UiKit.COL_GOLD, 2, 3))
 	b.add_theme_stylebox_override("pressed", UiKit.stylebox(Color(0.06, 0.052, 0.045, 0.98), UiKit.COL_GOLD, 2, 3))
 	b.tooltip_text = "%s · %s\n推荐战力 %d" % [Data.dungeon_title(d), Data.DIFFICULTIES[diff]["name"],
-		Data.recommended_combat_power(d)]
+		Data.recommended_combat_power(d, Game.reference_level())]
 	b.pressed.connect(_on_node.bind(d))
 
 	var v := VBoxContainer.new()

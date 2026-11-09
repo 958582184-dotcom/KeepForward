@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.71.0"
+const VERSION := "0.72.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -653,7 +653,7 @@ static func dungeon_title(d: Dictionary) -> String:
 	return "%s Lv.%d" % [String(d.get("zone", "山谷")), int(d.get("level", 1))]
 
 
-static func recommended_combat_power(d: Dictionary) -> int:
+static func recommended_combat_power(d: Dictionary, reference_level: int = 0) -> int:
 	var lv := int(d.get("level", 1))
 	var base := 60.0 * float(lv) + 40.0
 	var mult := 1.0
@@ -664,6 +664,8 @@ static func recommended_combat_power(d: Dictionary) -> int:
 			mult = 1.40
 	if String(d.get("kind", "normal")) == "boss":
 		mult = maxf(mult, 1.30)
+	if reference_level > 0:
+		mult *= 1.0 + 0.12 * float(maxi(0, lv - reference_level))
 	return int(round(base * mult / 10.0)) * 10
 
 
