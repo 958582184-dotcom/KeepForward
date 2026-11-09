@@ -138,12 +138,14 @@ func _draw() -> void:
 	if item != null:
 		border = item.quality_color()
 	draw_rect(Rect2(Vector2(1, 1), size - Vector2(2, 2)), border, false, 1.5)
-	var bevel_light := border.lightened(0.32)
-	var bevel_dark := border.darkened(0.38)
-	draw_line(Vector2(1, 1), Vector2(size.x - 1, 1), bevel_light, 1.0)
-	draw_line(Vector2(1, 1), Vector2(1, size.y - 1), bevel_light, 1.0)
-	draw_line(Vector2(1, size.y - 1), Vector2(size.x - 1, size.y - 1), bevel_dark, 1.0)
-	draw_line(Vector2(size.x - 1, 1), Vector2(size.x - 1, size.y - 1), bevel_dark, 1.0)
+	if item != null:
+		var bevel_light := border.lightened(0.48)
+		var bevel_dark := border.darkened(0.55)
+		draw_line(Vector2(1, 1), Vector2(size.x - 1, 1), bevel_light, 2.0)
+		draw_line(Vector2(1, 1), Vector2(1, size.y - 1), bevel_light, 2.0)
+		draw_line(Vector2(1, size.y - 1), Vector2(size.x - 1, size.y - 1), bevel_dark, 2.0)
+		draw_line(Vector2(size.x - 1, 1), Vector2(size.x - 1, size.y - 1), bevel_dark, 2.0)
+		draw_line(Vector2(3, size.y - 2), Vector2(size.x - 2, size.y - 2), Color(0, 0, 0, 0.24), 1.0)
 	if paper:
 		draw_rect(Rect2(Vector2(4, 4), size - Vector2(8, 8)), Color(0.78, 0.60, 0.34, 0.22), false, 1.0)
 		draw_circle(Vector2(5, 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
