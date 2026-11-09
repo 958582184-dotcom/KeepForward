@@ -24,6 +24,17 @@ var _tip: ItemTooltip
 var _menu: PopupMenu
 var _menu_item: GameItem
 var _stats_open := true
+var _sell_menu: PanelContainer
+var _dismantle_menu: PanelContainer
+var _menu_overlay: ColorRect
+var _sell_btn: Button
+var _dismantle_btn: Button
+var _sell_auto_off: CheckBox
+var _sell_auto_on: CheckBox
+var _dismantle_auto_off: CheckBox
+var _dismantle_auto_on: CheckBox
+var _sell_quality_checks: Array = []
+var _dismantle_quality_checks: Array = []
 
 
 func _init() -> void:
@@ -37,6 +48,164 @@ func _after_build() -> void:
 	_menu = PopupMenu.new()
 	_menu.id_pressed.connect(_on_menu_id)
 	add_child(_menu)
+	_build_action_menus()
+	closed.connect(_close_action_menus)
+
+
+func _build_action_menus() -> void:
+	_menu_overlay = ColorRect.new()
+	_menu_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_menu_overlay.color = Color(0, 0, 0, 0)
+	_menu_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu_overlay.z_index = 80
+	_menu_overlay.visible = false
+	_menu_overlay.gui_input.connect(_on_menu_overlay_input)
+	add_child(_menu_overlay)
+	_sell_menu = _make_action_menu(true)
+	_dismantle_menu = _make_action_menu(false)
+	_sync_action_menus()
+
+
+func _make_action_menu(is_sell: bool) -> PanelContainer:
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", UiKit.stylebox(Color(0.035, 0.045, 0.060, 0.98), UiKit.COL_GOLD_DIM, 2, 8))
+	p.z_index = 100
+	p.mouse_filter = Control.MOUSE_FILTER_STOP
+	p.visible = false
+	add_child(p)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	p.add_child(margin)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 5)
+	margin.add_child(v)
+	v.add_child(UiKit.label("自动出售" if is_sell else "自动分解", 11, UiKit.COL_GOLD))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 18)
+	grid.add_theme_constant_override("v_separation", 1)
+	v.add_child(grid)
+	var group := ButtonGroup.new()
+	group.allow_unpress = false
+	var off := CheckBox.new()
+	off.text = "关闭"
+	off.button_group = group
+	off.add_theme_color_override("font_color", UiKit.COL_MUTED)
+	grid.add_child(off)
+	var on := CheckBox.new()
+	on.text = "开启"
+	on.button_group = group
+	on.add_theme_color_override("font_color", UiKit.COL_GREEN)
+	grid.add_child(on)
+	if is_sell:
+		_sell_auto_off = off
+		_sell_auto_on = on
+	else:
+		_dismantle_auto_off = off
+		_dismantle_auto_on = on
+	off.toggled.connect(func(pressed: bool):
+		if pressed:
+			if is_sell:
+				Game.set_auto_sell(false)
+			else:
+				Game.set_auto_dismantle(false)
+			_sync_action_menus())
+	on.toggled.connect(func(pressed: bool):
+		if pressed:
+			if is_sell:
+				Game.set_auto_sell(true)
+			else:
+				Game.set_auto_dismantle(true)
+			_sync_action_menus())
+	var checks: Array = []
+	for q in 5:
+		var quality := q
+		var cb := CheckBox.new()
+		cb.text = String(Data.QUALITIES[quality]["name"])
+		cb.add_theme_color_override("font_color", Data.quality_color(quality))
+		cb.add_theme_color_override("font_pressed_color", Data.quality_color(quality))
+		cb.toggled.connect(func(enabled: bool):
+			if is_sell:
+				Game.set_sell_quality(quality, enabled)
+			else:
+				Game.set_dismantle_quality(quality, enabled))
+		grid.add_child(cb)
+		checks.append(cb)
+	if is_sell:
+		_sell_quality_checks = checks
+	else:
+		_dismantle_quality_checks = checks
+	var blank := Control.new()
+	blank.custom_minimum_size = Vector2(0, 22)
+	grid.add_child(blank)
+	var action := UiKit.button("出售" if is_sell else "分解", 11)
+	action.custom_minimum_size = Vector2(0, 26)
+	action.pressed.connect(func():
+		if is_sell:
+			Game.sell_selected_unlocked()
+		else:
+			Game.dismantle_selected_unlocked()
+		_close_action_menus())
+	v.add_child(action)
+	return p
+
+
+func _sync_action_menus() -> void:
+	if _sell_auto_off == null or _dismantle_auto_off == null:
+		return
+	_sell_auto_off.set_pressed_no_signal(not Game.auto_sell)
+	_sell_auto_on.set_pressed_no_signal(Game.auto_sell)
+	_dismantle_auto_off.set_pressed_no_signal(not Game.auto_dismantle)
+	_dismantle_auto_on.set_pressed_no_signal(Game.auto_dismantle)
+	for q in _sell_quality_checks.size():
+		_sell_quality_checks[q].set_pressed_no_signal(Game.sell_qualities.has(q))
+	for q in _dismantle_quality_checks.size():
+		_dismantle_quality_checks[q].set_pressed_no_signal(Game.dismantle_qualities.has(q))
+
+
+func _open_sell_menu() -> void:
+	if _sell_menu.visible:
+		_close_action_menus()
+		return
+	_open_action_menu(_sell_menu, _sell_btn)
+
+
+func _open_dismantle_menu() -> void:
+	if _dismantle_menu.visible:
+		_close_action_menus()
+		return
+	_open_action_menu(_dismantle_menu, _dismantle_btn)
+
+
+func _open_action_menu(menu: PanelContainer, button: Button) -> void:
+	_close_action_menus()
+	_sync_action_menus()
+	_menu_overlay.visible = true
+	menu.visible = true
+	var needed := menu.get_combined_minimum_size()
+	menu.size = needed
+	var origin := button.get_global_rect().position - get_global_rect().position
+	var max_x := maxf(8.0, size.x - needed.x - 8.0)
+	var pos := Vector2(clampf(origin.x, 8.0, max_x), maxf(8.0, origin.y - needed.y - 6.0))
+	menu.position = pos.round()
+
+
+func _close_action_menus() -> void:
+	if _sell_menu != null:
+		_sell_menu.visible = false
+	if _dismantle_menu != null:
+		_dismantle_menu.visible = false
+	if _menu_overlay != null:
+		_menu_overlay.visible = false
+
+
+func _on_menu_overlay_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		_close_action_menus()
+		get_viewport().set_input_as_handled()
 
 
 func _refresh_body(box: VBoxContainer) -> void:
@@ -54,14 +223,16 @@ func _refresh_body(box: VBoxContainer) -> void:
 	_footer_left.add_child(UiKit.label("金币 %s" % UiKit.num(Game.gold), 12, UiKit.COL_GOLD))
 	_footer_left.add_child(UiKit.label("材料 %d" % Game.materials, 12, Color("#8fd3c7")))
 	_footer_left.add_child(UiKit.spacer())
-	var sell_all := UiKit.button("全部出售", 10)
-	sell_all.tooltip_text = "出售背包中所有未锁定且未穿戴的装备"
-	sell_all.pressed.connect(func(): Game.sell_all_unlocked())
-	_footer_left.add_child(sell_all)
-	var dismantle_all := UiKit.button("全部分解", 10)
-	dismantle_all.tooltip_text = "分解背包中所有未锁定且未穿戴的装备"
-	dismantle_all.pressed.connect(func(): Game.dismantle_all_unlocked())
-	_footer_left.add_child(dismantle_all)
+	_sell_btn = UiKit.button("⚙ 出售", 10)
+	_sell_btn.custom_minimum_size = Vector2(72, 24)
+	_sell_btn.tooltip_text = "自动出售设置与手动出售"
+	_sell_btn.pressed.connect(_open_sell_menu)
+	_footer_left.add_child(_sell_btn)
+	_dismantle_btn = UiKit.button("⚙ 分解", 10)
+	_dismantle_btn.custom_minimum_size = Vector2(72, 24)
+	_dismantle_btn.tooltip_text = "自动分解设置与手动分解"
+	_dismantle_btn.pressed.connect(_open_dismantle_menu)
+	_footer_left.add_child(_dismantle_btn)
 
 	var title_row := HBoxContainer.new()
 	title_row.add_child(UiKit.label("背包", 16, UiKit.COL_GOLD))
@@ -217,12 +388,6 @@ func _refresh_body(box: VBoxContainer) -> void:
 	auto_eq.add_theme_color_override("font_color", UiKit.COL_GREEN if Game.auto_equip else UiKit.COL_MUTED)
 	auto_eq.pressed.connect(_toggle_auto_equip)
 	auto_row.add_child(auto_eq)
-	var auto_sell := UiKit.button("自动出售：%s" % ("开" if Game.auto_sell else "关"), 11)
-	auto_sell.custom_minimum_size = Vector2(0, 24)
-	auto_sell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	auto_sell.add_theme_color_override("font_color", UiKit.COL_GREEN if Game.auto_sell else UiKit.COL_MUTED)
-	auto_sell.pressed.connect(_toggle_auto_sell)
-	auto_row.add_child(auto_sell)
 	info.add_child(auto_row)
 	header.add_child(info)
 	right.add_child(header)

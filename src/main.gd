@@ -91,6 +91,10 @@ func _ready() -> void:
 		_run_settest()
 		return
 
+	if "--sellmenutest" in args:
+		_run_sellmenutest()
+		return
+
 	if "--battletest" in args:
 		_run_battletest()
 		return
@@ -461,6 +465,19 @@ func _run_teambalancetest() -> void:
 			var result := TeamBattle.build(d, [p1, p2], Game.rng, lv)
 			print("TEAMBALANCE lv=%d q=%d dungeon=%d win=%s" % [
 				lv, quality, target_level, str(result.get("win", false))])
+	get_tree().quit()
+
+
+func _run_sellmenutest() -> void:
+	Game.new_game("warrior")
+	hud.toggle_window("bag")
+	await get_tree().create_timer(0.3).timeout
+	hud._bag._open_sell_menu()
+	await get_tree().create_timer(0.2).timeout
+	print("SELLMENU visible=%s size=%s pos=%s checks=%d" % [
+		str(hud._bag._sell_menu.visible), str(hud._bag._sell_menu.size),
+		str(hud._bag._sell_menu.position), hud._bag._sell_quality_checks.size()])
+	hud._bag._close_action_menus()
 	get_tree().quit()
 
 

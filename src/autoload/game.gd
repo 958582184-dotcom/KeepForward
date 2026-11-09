@@ -48,6 +48,9 @@ var speed_mult := 1.0
 var auto_mode := "next"
 var auto_equip := true
 var auto_sell := false
+var auto_dismantle := false
+var sell_qualities: Array[int] = [0, 1, 2, 3, 4]
+var dismantle_qualities: Array[int] = [0, 1, 2, 3, 4]
 var current_dungeon: Dictionary = {}
 var last_normal_dungeon: Dictionary = {}
 var busy := false
@@ -164,6 +167,9 @@ func new_game(cid: String) -> void:
 	auto_mode = "next"
 	auto_equip = true
 	auto_sell = false
+	auto_dismantle = false
+	sell_qualities = [0, 1, 2, 3, 4]
+	dismantle_qualities = [0, 1, 2, 3, 4]
 	current_dungeon = {}
 	shop_free_left = Data.SHOP_FREE_PER_HOUR
 	shop_reset_at = Time.get_unix_time_from_system() + 3600.0
@@ -223,6 +229,9 @@ func save_game() -> void:
 		"auto_mode": auto_mode,
 		"auto_equip": auto_equip,
 		"auto_sell": auto_sell,
+		"auto_dismantle": auto_dismantle,
+		"sell_q": sell_qualities,
+		"dismantle_q": dismantle_qualities,
 		"shop_free": shop_free_left,
 		"shop_reset": shop_reset_at,
 		"shop": _shop_to_array(),
@@ -284,6 +293,9 @@ func load_game() -> bool:
 		auto_mode = "next"
 	auto_equip = bool(d.get("auto_equip", true))
 	auto_sell = bool(d.get("auto_sell", false))
+	auto_dismantle = bool(d.get("auto_dismantle", false))
+	sell_qualities = _quality_list(d.get("sell_q", [0, 1, 2, 3, 4]))
+	dismantle_qualities = _quality_list(d.get("dismantle_q", [0, 1, 2, 3, 4]))
 	shop_free_left = clampi(int(d.get("shop_free", Data.SHOP_FREE_PER_HOUR)), 0, Data.SHOP_FREE_PER_HOUR)
 	shop_reset_at = float(d.get("shop_reset", 0.0))
 	shop_stock.clear()
@@ -577,23 +589,34 @@ func receive_drop(item: GameItem) -> void:
 				stats_changed.emit()
 				toast.emit("自动装备 %s" % item.item_name, item.quality_color())
 				if old != null:
-					if auto_sell and not old.locked:
-						var old_gold := old.sell_value()
+					if _auto_sell_match(old):
+						var old_gold := _sell_item_value(old)
 						gold += old_gold
 						gold_changed.emit()
 						toast.emit("自动出售替换下的 %s  +%d 金币" % [old.item_name, old_gold], Color("#e0b45a"))
+					elif _auto_dismantle_match(old):
+						var old_mat := _dismantle_item_value(old)
+						materials += old_mat
+						inventory_changed.emit()
+						toast.emit("自动分解替换下的 %s  +%d 材料" % [old.item_name, old_mat], Color("#8fd3c7"))
 					elif not add_item(old):
-						var old_gold2 := old.sell_value()
+						var old_gold2 := _sell_item_value(old)
 						gold += old_gold2
 						gold_changed.emit()
 						toast.emit("背包已满，替换下的装备已自动出售  +%d 金币" % old_gold2, Color("#e0b45a"))
 	if not equipped:
-		if auto_sell:
-			var value := item.sell_value()
+		if _auto_sell_match(item):
+			var value := _sell_item_value(item)
 			gold += value
 			gold_changed.emit()
 			_dirty = true
 			toast.emit("自动出售 %s  +%d 金币" % [item.item_name, value], Color("#e0b45a"))
+		elif _auto_dismantle_match(item):
+			var mat := _dismantle_item_value(item)
+			materials += mat
+			inventory_changed.emit()
+			_dirty = true
+			toast.emit("自动分解 %s  +%d 材料" % [item.item_name, mat], Color("#8fd3c7"))
 		else:
 			if add_item(item):
 				toast.emit("拾取 %s（%s）" % [item.item_name, item.quality_name()], item.quality_color())
@@ -629,6 +652,96 @@ func set_auto_sell(value: bool) -> void:
 	auto_sell = value
 	_dirty = true
 	toast.emit("自动出售装备：%s" % ("开" if value else "关"), Color("#c8d2df"))
+
+
+func set_auto_dismantle(value: bool) -> void:
+	auto_dismantle = value
+	_dirty = true
+	toast.emit("自动分解装备：%s" % ("开" if value else "关"), Color("#c8d2df"))
+
+
+func _quality_list(raw: Variant) -> Array[int]:
+	var out: Array[int] = []
+	if raw is Array:
+		for v in raw:
+			var q := int(v)
+			if q >= 0 and q <= 4 and not out.has(q):
+				out.append(q)
+	out.sort()
+	return out
+
+
+func set_sell_quality(q: int, enabled: bool) -> void:
+	if enabled and not sell_qualities.has(q):
+		sell_qualities.append(q)
+	elif not enabled:
+		sell_qualities.erase(q)
+	sell_qualities.sort()
+	_dirty = true
+
+
+func set_dismantle_quality(q: int, enabled: bool) -> void:
+	if enabled and not dismantle_qualities.has(q):
+		dismantle_qualities.append(q)
+	elif not enabled:
+		dismantle_qualities.erase(q)
+	dismantle_qualities.sort()
+	_dirty = true
+
+
+func _auto_sell_match(item: GameItem) -> bool:
+	return auto_sell and item != null and not item.locked and sell_qualities.has(int(item.quality))
+
+
+func _auto_dismantle_match(item: GameItem) -> bool:
+	return auto_dismantle and item != null and not item.locked and dismantle_qualities.has(int(item.quality))
+
+
+func _sell_item_value(item: GameItem) -> int:
+	return item.sell_value()
+
+
+func _dismantle_item_value(item: GameItem) -> int:
+	return maxi(1, int(round(item.sell_value() * 0.5)))
+
+
+func sell_selected_unlocked() -> void:
+	var count := 0
+	var total := 0
+	for i in inventory.size():
+		var it: GameItem = inventory[i]
+		if it == null or it.locked or not sell_qualities.has(int(it.quality)):
+			continue
+		total += _sell_item_value(it)
+		inventory[i] = null
+		count += 1
+	if count == 0:
+		toast.emit("没有勾选品质的可出售背包装备", Color("#c8d2df"))
+		return
+	gold += total
+	inventory_changed.emit()
+	gold_changed.emit()
+	_dirty = true
+	toast.emit("出售 %d 件装备  +%d 金币" % [count, total], Color("#e0b45a"))
+
+
+func dismantle_selected_unlocked() -> void:
+	var count := 0
+	var total := 0
+	for i in inventory.size():
+		var it: GameItem = inventory[i]
+		if it == null or it.locked or not dismantle_qualities.has(int(it.quality)):
+			continue
+		total += _dismantle_item_value(it)
+		inventory[i] = null
+		count += 1
+	if count == 0:
+		toast.emit("没有勾选品质的可分解背包装备", Color("#c8d2df"))
+		return
+	materials += total
+	inventory_changed.emit()
+	_dirty = true
+	toast.emit("分解 %d 件装备  +%d 材料" % [count, total], Color("#8fd3c7"))
 
 
 func set_auto_mode(mode: String) -> void:
@@ -1458,6 +1571,9 @@ func debug_seed() -> void:
 	auto_mode = "off"
 	auto_equip = true
 	auto_sell = false
+	auto_dismantle = false
+	sell_qualities = [0, 1, 2, 3, 4]
+	dismantle_qualities = [0, 1, 2, 3, 4]
 	current_dungeon = {}
 	shop_free_left = Data.SHOP_FREE_PER_HOUR
 	shop_reset_at = Time.get_unix_time_from_system() + 3600.0
