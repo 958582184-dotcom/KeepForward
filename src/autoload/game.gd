@@ -1099,10 +1099,12 @@ func sort_inventory() -> void:
 		if it != null:
 			items.append(it)
 	items.sort_custom(func(a, b):
-		if a.quality != b.quality:
-			return a.quality > b.quality
+		if a.locked != b.locked:
+			return a.locked
 		if a.ilvl != b.ilvl:
 			return a.ilvl > b.ilvl
+		if a.quality != b.quality:
+			return a.quality > b.quality
 		return a.slot < b.slot)
 	inventory.clear()
 	for it in items:

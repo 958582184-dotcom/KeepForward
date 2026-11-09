@@ -2,7 +2,7 @@ class_name BackpackWindow
 extends BaseWindow
 
 const EQ_CELL := 50
-const EQ_BIG_CELL := 56
+const EQ_BIG_CELL := 50
 const INV_CELL := 36
 const EQ_POS := {
 	"head": Vector2(150, 50),
@@ -36,6 +36,7 @@ var _dismantle_auto_on: CheckBox
 var _sell_quality_checks: Array = []
 var _dismantle_quality_checks: Array = []
 var _set_expanded: Dictionary = {}
+var _stats_scroll: ScrollContainer
 
 
 func _init() -> void:
@@ -211,6 +212,7 @@ func _on_menu_overlay_input(event: InputEvent) -> void:
 
 func _refresh_body(box: VBoxContainer) -> void:
 	var stats := Game.compute_stats()
+	var stats_scroll_y := _stats_scroll.scroll_vertical if _stats_scroll != null else 0
 	for c in box.get_children():
 		box.remove_child(c)
 		c.queue_free()
@@ -295,6 +297,11 @@ func _refresh_body(box: VBoxContainer) -> void:
 	inv_head.add_child(UiKit.label("背包", 12, UiKit.COL_GOLD))
 	inv_head.add_child(UiKit.label("%d/%d" % [Game.inventory_count(), Data.INVENTORY_SIZE], 10, UiKit.COL_MUTED))
 	inv_head.add_child(UiKit.spacer())
+	var auto_eq := UiKit.button("自动替换：%s" % ("开" if Game.auto_equip else "关"), 9)
+	auto_eq.custom_minimum_size = Vector2(92, 20)
+	auto_eq.add_theme_color_override("font_color", UiKit.COL_GREEN if Game.auto_equip else UiKit.COL_MUTED)
+	auto_eq.pressed.connect(_toggle_auto_equip)
+	inv_head.add_child(auto_eq)
 	var sort_btn := UiKit.button("整理", 10)
 	sort_btn.custom_minimum_size = Vector2(34, 20)
 	sort_btn.pressed.connect(func(): Game.sort_inventory())
@@ -326,6 +333,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 		inv_grid.add_child(slot)
 
 	if not _stats_open:
+		_stats_scroll = null
 		return
 
 	# 右：人物 + 属性
@@ -369,6 +377,9 @@ func _refresh_body(box: VBoxContainer) -> void:
 	level_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	level_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	char_head.add_child(level_label)
+	var power_gap := Control.new()
+	power_gap.custom_minimum_size = Vector2(40, 0)
+	char_head.add_child(power_gap)
 	var power_label := UiKit.label("战力 %s" % UiKit.num(Game.combat_power()), 11, UiKit.COL_GOLD)
 	power_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	power_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -380,16 +391,6 @@ func _refresh_body(box: VBoxContainer) -> void:
 	exp_bar.size = Vector2(240, 6)
 	exp_bar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	info.add_child(exp_bar)
-
-	var auto_row := HBoxContainer.new()
-	auto_row.add_theme_constant_override("separation", 6)
-	var auto_eq := UiKit.button("自动替换：%s" % ("开" if Game.auto_equip else "关"), 11)
-	auto_eq.custom_minimum_size = Vector2(0, 24)
-	auto_eq.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	auto_eq.add_theme_color_override("font_color", UiKit.COL_GREEN if Game.auto_equip else UiKit.COL_MUTED)
-	auto_eq.pressed.connect(_toggle_auto_equip)
-	auto_row.add_child(auto_eq)
-	info.add_child(auto_row)
 	header.add_child(info)
 	right.add_child(header)
 
@@ -398,6 +399,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right.add_child(scroll)
+	_stats_scroll = scroll
 
 	var rv := VBoxContainer.new()
 	rv.custom_minimum_size = Vector2(320, 0)
@@ -464,8 +466,8 @@ func _refresh_body(box: VBoxContainer) -> void:
 				String(entry.get("name", "")), count, max_count],
 				11, UiKit.COL_GREEN if count >= 2 else UiKit.COL_MUTED))
 			head.add_child(UiKit.spacer())
-			var expand := UiKit.button("收起" if expanded else "展开", 9)
-			expand.custom_minimum_size = Vector2(36, 20)
+			var expand := UiKit.button("▼" if expanded else "▶", 9)
+			expand.custom_minimum_size = Vector2(20, 20)
 			expand.tooltip_text = "点此按钮可以展开详情"
 			expand.pressed.connect(func():
 				_set_expanded[expand_key] = not bool(_set_expanded.get(expand_key, false))
@@ -492,6 +494,9 @@ func _refresh_body(box: VBoxContainer) -> void:
 						UiKit.COL_GREEN if equipped else UiKit.COL_MUTED)
 					piece_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 					rv.add_child(piece_line)
+
+	if stats_scroll_y > 0:
+		scroll.set_deferred("scroll_vertical", stats_scroll_y)
 
 	if _stats_open:
 		main.add_child(right)
