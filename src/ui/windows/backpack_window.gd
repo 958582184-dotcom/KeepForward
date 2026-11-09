@@ -272,41 +272,20 @@ func _refresh_body(box: VBoxContainer) -> void:
 	main.add_theme_constant_override("separation", 12)
 	box.add_child(main)
 
-	# 左：筛选 tab + 装备 + 背包
-	var left_col := HBoxContainer.new()
-	left_col.add_theme_constant_override("separation", 6)
-	main.add_child(left_col)
-	var tabs := VBoxContainer.new()
-	tabs.custom_minimum_size = Vector2(50, 0)
-	tabs.add_theme_constant_override("separation", 4)
-	left_col.add_child(tabs)
-	for f in [["all", "全部"], ["weapon", "武器"], ["armor", "防具"], ["jewel", "饰品"], ["rune", "符文"]]:
-		var key := String(f[0])
-		var tab_key := key
-		var tab := UiKit.button(String(f[1]), 10)
-		tab.custom_minimum_size = Vector2(50, 26)
-		tab.add_theme_color_override("font_color", UiKit.COL_GOLD if _inv_filter == key else UiKit.COL_MUTED)
-		if _inv_filter == key:
-			tab.add_theme_stylebox_override("normal",
-				UiKit.stylebox(Color(0.22, 0.17, 0.10, 0.95), UiKit.COL_GOLD, 1, 2))
-		tab.pressed.connect(func():
-			_inv_filter = tab_key
-			_reset_inv_scroll = true
-			refresh())
-		tabs.add_child(tab)
+	# 左：装备 + 背包（筛选页签在背包格左侧）
 	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(370, 0)
+	left.custom_minimum_size = Vector2(420, 0)
 	left.add_theme_constant_override("separation", 6)
-	left_col.add_child(left)
+	main.add_child(left)
 
 	var doll := PaperDoll.new()
-	doll.custom_minimum_size = Vector2(370, 320)
+	doll.custom_minimum_size = Vector2(420, 320)
 	left.add_child(doll)
 	var equip_lv := UiKit.label("战力 %s" % UiKit.num(Game.combat_power()), 12, Color("#3d2a17"))
 	equip_lv.position = Vector2(6, 4)
 	doll.add_child(equip_lv)
 	var toggle := UiKit.button("◀" if _stats_open else "▶", 12)
-	toggle.position = Vector2(304, 286)
+	toggle.position = Vector2(374, 286)
 	toggle.custom_minimum_size = Vector2(32, 26)
 	toggle.size = Vector2(32, 26)
 	toggle.clip_contents = false
@@ -316,7 +295,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	toggle.add_theme_stylebox_override("hover", UiKit.stylebox(Color(0.16, 0.14, 0.11, 0.95), UiKit.COL_GOLD, 1, 2))
 	toggle.pressed.connect(_toggle_stats)
 	var toggle_frame := PanelContainer.new()
-	toggle_frame.position = Vector2(302, 284)
+	toggle_frame.position = Vector2(372, 284)
 	toggle_frame.custom_minimum_size = Vector2(36, 30)
 	toggle_frame.size = Vector2(36, 30)
 	toggle_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -337,7 +316,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 		slot.set_paper(true)
 
 	var inv_head := HBoxContainer.new()
-	inv_head.custom_minimum_size = Vector2(370, 22)
+	inv_head.custom_minimum_size = Vector2(420, 22)
 	inv_head.add_theme_constant_override("separation", 5)
 	inv_head.add_child(UiKit.label("背包", 12, UiKit.COL_GOLD))
 	inv_head.add_child(UiKit.label("%d/%d" % [Game.inventory_count(), Data.INVENTORY_SIZE], 10, UiKit.COL_MUTED))
@@ -353,11 +332,34 @@ func _refresh_body(box: VBoxContainer) -> void:
 	inv_head.add_child(sort_btn)
 	left.add_child(inv_head)
 
+	var inv_row := HBoxContainer.new()
+	inv_row.custom_minimum_size = Vector2(420, 204)
+	inv_row.add_theme_constant_override("separation", 6)
+	left.add_child(inv_row)
+	var tabs := VBoxContainer.new()
+	tabs.custom_minimum_size = Vector2(50, 204)
+	tabs.add_theme_constant_override("separation", 4)
+	inv_row.add_child(tabs)
+	for f in [["all", "全部"], ["weapon", "武器"], ["armor", "防具"], ["jewel", "饰品"], ["rune", "符文"]]:
+		var key := String(f[0])
+		var tab_key := key
+		var tab := UiKit.button(String(f[1]), 10)
+		tab.custom_minimum_size = Vector2(50, 26)
+		tab.add_theme_color_override("font_color", UiKit.COL_GOLD if _inv_filter == key else UiKit.COL_MUTED)
+		if _inv_filter == key:
+			tab.add_theme_stylebox_override("normal",
+				UiKit.stylebox(Color(0.22, 0.17, 0.10, 0.95), UiKit.COL_GOLD, 1, 2))
+		tab.pressed.connect(func():
+			_inv_filter = tab_key
+			_reset_inv_scroll = true
+			refresh())
+		tabs.add_child(tab)
 	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(370, 204)
+	inv_scroll.custom_minimum_size = Vector2(364, 204)
+	inv_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inv_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	left.add_child(inv_scroll)
+	inv_row.add_child(inv_scroll)
 	_inv_scroll = inv_scroll
 
 	var inv_grid := GridContainer.new()
