@@ -46,7 +46,7 @@ var _reset_inv_scroll := false
 
 func _init() -> void:
 	title = "背包"
-	window_size = Vector2(820, 640)
+	window_size = Vector2(760, 640)
 
 
 func _after_build() -> void:
@@ -274,12 +274,12 @@ func _refresh_body(box: VBoxContainer) -> void:
 
 	# 左：装备 + 背包（筛选页签在背包格左侧）
 	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(420, 0)
+	left.custom_minimum_size = Vector2(350, 0)
 	left.add_theme_constant_override("separation", 6)
 	main.add_child(left)
 
 	var doll := PaperDoll.new()
-	doll.custom_minimum_size = Vector2(420, 320)
+	doll.custom_minimum_size = Vector2(350, 320)
 	left.add_child(doll)
 	var equip_lv := UiKit.label("战力 %s" % UiKit.num(Game.combat_power()), 12, Color("#3d2a17"))
 	equip_lv.position = Vector2(6, 4)
@@ -578,7 +578,7 @@ func _stat_row(name_text: String, value_text: String, color: Color) -> HBoxConta
 
 func _toggle_stats() -> void:
 	_stats_open = not _stats_open
-	resize_keep_origin(Vector2(820, 640) if _stats_open else Vector2(480, 640), true, true)
+	resize_keep_origin(Vector2(760, 640) if _stats_open else Vector2(410, 640), true, true)
 	refresh()
 
 
