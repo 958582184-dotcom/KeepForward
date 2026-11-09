@@ -33,7 +33,7 @@ func setup(dungeons: Array) -> void:
 	if Game.boss_ready():
 		var pos := _find_pos(used, 64.0, 74.0)
 		var area := Game.current_area()
-		var boss_level := clampi(Game.level, int(area["min_level"]), int(area["max_level"]))
+		var boss_level := int(area["max_level"])
 		_add_boss_node(pos, boss_level)
 	queue_redraw()
 
