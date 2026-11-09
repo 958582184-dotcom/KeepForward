@@ -201,7 +201,7 @@ func start_dungeon(d: Dictionary, auto_continue: bool = false) -> void:
 		hud.clear_stage()
 	_busy = false
 	Game.set_busy(false)
-	var auto_next := cleared and not Game.boss_ready() and Game.auto_mode != "off" and not Net.in_party
+	var auto_next := cleared and Game.auto_mode != "off" and not Net.in_party
 	if auto_next:
 		if Game.level > level_at_start:
 			_combat_hp_max = float(Game.compute_stats().get("hp_max", _combat_hp_max))
@@ -234,16 +234,10 @@ func resume_auto(delay: float = 0.6) -> void:
 	if Game.inventory_count() >= Data.INVENTORY_SIZE and not Game.auto_sell:
 		Game.toast.emit("背包已满，自动副本暂停", Color("#ff7b72"))
 		return
-	if Game.boss_ready():
-		start_dungeon(Game.make_boss_dungeon(), true)
-		return
 	_auto_token += 1
 	var token := _auto_token
 	await get_tree().create_timer(delay / maxf(0.25, Game.speed_mult)).timeout
 	if token != _auto_token or _busy or Game.auto_mode == "off":
-		return
-	if Game.boss_ready():
-		start_dungeon(Game.make_boss_dungeon(), true)
 		return
 	var d: Dictionary = Game.pick_auto_dungeon()
 	if d.is_empty():
