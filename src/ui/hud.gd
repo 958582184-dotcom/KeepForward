@@ -14,6 +14,7 @@ var _buttons: Dictionary = {}
 var _button_icons: Dictionary = {}
 var _windows: Dictionary = {}
 var _current: BaseWindow = null
+var _refresh_queued := false
 var _modal: Control
 var _modal_open := false
 
@@ -252,6 +253,14 @@ func update_status_line() -> void:
 func _on_state_changed() -> void:
 	update_badges()
 	update_status_line()
+	if _refresh_queued:
+		return
+	_refresh_queued = true
+	call_deferred("_refresh_state_windows")
+
+
+func _refresh_state_windows() -> void:
+	_refresh_queued = false
 	if _bag != null and _bag.visible:
 		_bag.refresh()
 	if _shop != null and _shop.visible:

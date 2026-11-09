@@ -209,6 +209,7 @@ func _on_menu_overlay_input(event: InputEvent) -> void:
 
 
 func _refresh_body(box: VBoxContainer) -> void:
+	var stats := Game.compute_stats()
 	for c in box.get_children():
 		box.remove_child(c)
 		c.queue_free()
@@ -253,7 +254,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	var doll := PaperDoll.new()
 	doll.custom_minimum_size = Vector2(350, 320)
 	left.add_child(doll)
-	var equip_lv := UiKit.label("装备等级 %d" % int(Game.compute_stats().get("ilvl", 1)), 12, Color("#3d2a17"))
+	var equip_lv := UiKit.label("装备等级 %d" % int(stats.get("ilvl", 1)), 12, Color("#3d2a17"))
 	equip_lv.position = Vector2(6, 4)
 	doll.add_child(equip_lv)
 	var toggle := UiKit.button("◀" if _stats_open else "▶", 12)
@@ -332,7 +333,6 @@ func _refresh_body(box: VBoxContainer) -> void:
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation", 6)
 
-	var stats := Game.compute_stats()
 	var cls: Dictionary = Data.class_def(Game.class_id)
 	var ch: Dictionary = Data.character_def(Game.class_id)
 	var header := HBoxContainer.new()
