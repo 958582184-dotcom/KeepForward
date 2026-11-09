@@ -35,6 +35,7 @@ var _dismantle_auto_off: CheckBox
 var _dismantle_auto_on: CheckBox
 var _sell_quality_checks: Array = []
 var _dismantle_quality_checks: Array = []
+var _set_expanded: Dictionary = {}
 
 
 func _init() -> void:
@@ -450,21 +451,47 @@ func _refresh_body(box: VBoxContainer) -> void:
 		rv.add_child(UiKit.label("套装效果", 12, UiKit.COL_GOLD))
 		for entry in active_sets:
 			var set_id := String(entry.get("id", ""))
+			var set_level := int(entry.get("level", 0))
 			var sd := Data.set_def(set_id)
 			var count := int(entry.get("count", 0))
 			var max_count := int(entry.get("max", 0))
-			rv.add_child(UiKit.label("%s（%d/%d）· 装等%d" % [
-				String(entry.get("name", "")), count, max_count, int(entry.get("level", 0))],
+			var map_key := "%s|%d" % [set_id, set_level]
+			var expand_key := map_key
+			var expanded := bool(_set_expanded.get(map_key, false))
+			var head := HBoxContainer.new()
+			head.add_theme_constant_override("separation", 6)
+			head.add_child(UiKit.label("%s套装（%d/%d）" % [
+				String(entry.get("name", "")), count, max_count],
 				11, UiKit.COL_GREEN if count >= 2 else UiKit.COL_MUTED))
-			var bonuses: Dictionary = sd.get("bonuses", {})
-			for threshold in bonuses:
-				if count < int(threshold):
-					continue
-				var line := UiKit.label("%d 件：%s" % [int(threshold), Data.set_bonus_text(bonuses[threshold])],
-					10, UiKit.COL_GREEN)
-				line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-				line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				rv.add_child(line)
+			head.add_child(UiKit.spacer())
+			var expand := UiKit.button("收起" if expanded else "展开", 9)
+			expand.custom_minimum_size = Vector2(36, 20)
+			expand.tooltip_text = "点此按钮可以展开详情"
+			expand.pressed.connect(func():
+				_set_expanded[expand_key] = not bool(_set_expanded.get(expand_key, false))
+				refresh())
+			head.add_child(expand)
+			rv.add_child(head)
+			if expanded:
+				var bonuses: Dictionary = sd.get("bonuses", {})
+				var thresholds: Array = bonuses.keys()
+				thresholds.sort()
+				for threshold in thresholds:
+					var active := count >= int(threshold)
+					var line := UiKit.label("%d件效果 %s" % [int(threshold), Data.set_bonus_text(bonuses[threshold])],
+						10, UiKit.COL_GREEN if active else UiKit.COL_MUTED)
+					line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+					line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+					rv.add_child(line)
+				var pieces: Dictionary = sd.get("pieces", {})
+				for slot in ["head", "chest", "hands", "legs", "feet", "neck", "ring", "trinket"]:
+					if not pieces.has(slot):
+						continue
+					var equipped := Game.is_set_piece_equipped(set_id, set_level, slot)
+					var piece_line := UiKit.label(String(pieces[slot]), 10,
+						UiKit.COL_GREEN if equipped else UiKit.COL_MUTED)
+					piece_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+					rv.add_child(piece_line)
 
 	if _stats_open:
 		main.add_child(right)

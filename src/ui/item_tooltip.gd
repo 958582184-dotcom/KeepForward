@@ -95,10 +95,12 @@ func _add_set_block(parent: VBoxContainer, item: GameItem, set_count: int) -> vo
 	var count := Game.set_piece_count(item.set_id, item.set_level) if set_count < 0 else set_count
 	var max_count := int(sd.get("max", 0))
 	parent.add_child(UiKit.hsep())
-	parent.add_child(UiKit.label("套装：%s（%d/%d） · 装等%d" % [
-		item.set_name, count, max_count, item.set_level], 11, UiKit.COL_GOLD))
+	parent.add_child(UiKit.label("套装：%s（%d/%d）" % [
+		item.set_name, count, max_count], 11, UiKit.COL_GOLD))
 	var bonuses: Dictionary = sd.get("bonuses", {})
-	for threshold in bonuses:
+	var thresholds: Array = bonuses.keys()
+	thresholds.sort()
+	for threshold in thresholds:
 		var active := count >= int(threshold)
 		var line := UiKit.label("%d 件：%s" % [int(threshold), Data.set_bonus_text(bonuses[threshold])],
 			10, UiKit.COL_GREEN if active else UiKit.COL_DIM)

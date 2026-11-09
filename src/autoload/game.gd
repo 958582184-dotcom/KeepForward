@@ -513,6 +513,14 @@ func set_piece_count(set_id: String, set_level: int) -> int:
 	return n
 
 
+func is_set_piece_equipped(set_id: String, set_level: int, slot: String) -> bool:
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it != null and it.set_id == set_id and it.set_level == set_level and it.slot == slot:
+			return true
+	return false
+
+
 func _set_percent_bonuses(sets_list: Array) -> Dictionary:
 	var out := {}
 	for entry in sets_list:
