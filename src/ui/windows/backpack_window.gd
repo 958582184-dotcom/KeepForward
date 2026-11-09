@@ -334,8 +334,8 @@ func _refresh_body(box: VBoxContainer) -> void:
 	left.add_child(inv_head)
 
 	var inv_row := HBoxContainer.new()
-	inv_row.custom_minimum_size = Vector2(420, 204)
-	inv_row.add_theme_constant_override("separation", 6)
+	inv_row.custom_minimum_size = Vector2(350, 204)
+	inv_row.add_theme_constant_override("separation", 2)
 	left.add_child(inv_row)
 	var tabs := VBoxContainer.new()
 	tabs.custom_minimum_size = Vector2(56, 204)
@@ -356,7 +356,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 			refresh())
 		tabs.add_child(tab)
 	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(358, 204)
+	inv_scroll.custom_minimum_size = Vector2(292, 204)
 	inv_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inv_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
@@ -364,13 +364,11 @@ func _refresh_body(box: VBoxContainer) -> void:
 	_inv_scroll = inv_scroll
 
 	var inv_grid := GridContainer.new()
-	inv_grid.columns = 7
+	inv_grid.columns = 6
+	inv_grid.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	inv_grid.add_theme_constant_override("h_separation", 4)
 	inv_grid.add_theme_constant_override("v_separation", 4)
-	var inv_center := CenterContainer.new()
-	inv_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	inv_scroll.add_child(inv_center)
-	inv_center.add_child(inv_grid)
+	inv_scroll.add_child(inv_grid)
 	if _inv_filter == "all":
 		for i in Data.INVENTORY_SIZE:
 			_add_inv_slot(inv_grid, i, Game.inventory[i] if i < Game.inventory.size() else null)
@@ -383,7 +381,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 				empty_indices.append(i)
 			elif _matches_inv_filter(it):
 				item_indices.append(i)
-		var total_cells := maxi(28, int(ceil(float(item_indices.size()) / 7.0)) * 7)
+		var total_cells := maxi(24, int(ceil(float(item_indices.size()) / 6.0)) * 6)
 		var empty_cursor := 0
 		for pos in total_cells:
 			if pos < item_indices.size():
