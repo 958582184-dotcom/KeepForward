@@ -356,8 +356,8 @@ func _refresh_body(box: VBoxContainer) -> void:
 			refresh())
 		tabs.add_child(tab)
 	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(292, 204)
-	inv_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inv_scroll.custom_minimum_size = Vector2(286, 204)
+	inv_scroll.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inv_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	inv_row.add_child(inv_scroll)
