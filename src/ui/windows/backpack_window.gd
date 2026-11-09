@@ -39,11 +39,14 @@ var _sell_below_check: CheckBox
 var _dismantle_below_check: CheckBox
 var _set_expanded: Dictionary = {}
 var _stats_scroll: ScrollContainer
+var _inv_scroll: ScrollContainer
+var _inv_filter := "all"
+var _reset_inv_scroll := false
 
 
 func _init() -> void:
 	title = "背包"
-	window_size = Vector2(760, 620)
+	window_size = Vector2(820, 640)
 
 
 func _after_build() -> void:
@@ -230,6 +233,10 @@ func _on_menu_overlay_input(event: InputEvent) -> void:
 func _refresh_body(box: VBoxContainer) -> void:
 	var stats := Game.compute_stats()
 	var stats_scroll_y := _stats_scroll.scroll_vertical if _stats_scroll != null else 0
+	var inv_scroll_y := _inv_scroll.scroll_vertical if _inv_scroll != null else 0
+	if _reset_inv_scroll:
+		inv_scroll_y = 0
+		_reset_inv_scroll = false
 	for c in box.get_children():
 		box.remove_child(c)
 		c.queue_free()
@@ -265,11 +272,32 @@ func _refresh_body(box: VBoxContainer) -> void:
 	main.add_theme_constant_override("separation", 12)
 	box.add_child(main)
 
-	# 左：装备 + 背包
+	# 左：筛选 tab + 装备 + 背包
+	var left_col := HBoxContainer.new()
+	left_col.add_theme_constant_override("separation", 6)
+	main.add_child(left_col)
+	var tabs := VBoxContainer.new()
+	tabs.custom_minimum_size = Vector2(50, 0)
+	tabs.add_theme_constant_override("separation", 4)
+	left_col.add_child(tabs)
+	for f in [["all", "全部"], ["weapon", "武器"], ["armor", "防具"], ["jewel", "饰品"], ["rune", "符文"]]:
+		var key := String(f[0])
+		var tab_key := key
+		var tab := UiKit.button(String(f[1]), 10)
+		tab.custom_minimum_size = Vector2(50, 26)
+		tab.add_theme_color_override("font_color", UiKit.COL_GOLD if _inv_filter == key else UiKit.COL_MUTED)
+		if _inv_filter == key:
+			tab.add_theme_stylebox_override("normal",
+				UiKit.stylebox(Color(0.22, 0.17, 0.10, 0.95), UiKit.COL_GOLD, 1, 2))
+		tab.pressed.connect(func():
+			_inv_filter = tab_key
+			_reset_inv_scroll = true
+			refresh())
+		tabs.add_child(tab)
 	var left := VBoxContainer.new()
 	left.custom_minimum_size = Vector2(370, 0)
 	left.add_theme_constant_override("separation", 6)
-	main.add_child(left)
+	left_col.add_child(left)
 
 	var doll := PaperDoll.new()
 	doll.custom_minimum_size = Vector2(370, 320)
@@ -326,10 +354,11 @@ func _refresh_body(box: VBoxContainer) -> void:
 	left.add_child(inv_head)
 
 	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(370, 184)
+	inv_scroll.custom_minimum_size = Vector2(370, 204)
 	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inv_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	left.add_child(inv_scroll)
+	_inv_scroll = inv_scroll
 
 	var inv_grid := GridContainer.new()
 	inv_grid.columns = 7
@@ -339,15 +368,32 @@ func _refresh_body(box: VBoxContainer) -> void:
 	inv_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inv_scroll.add_child(inv_center)
 	inv_center.add_child(inv_grid)
-	for i in Data.INVENTORY_SIZE:
-		var slot := ItemSlot.new(INV_CELL, "")
-		slot.inv_index = i
-		slot.set_item(Game.inventory[i] if i < Game.inventory.size() else null)
-		slot.clicked.connect(_on_inv_clicked)
-		slot.hovered.connect(_on_slot_hovered)
-		slot.unhovered.connect(_on_slot_unhovered)
-		slot.dropped.connect(_on_item_dropped)
-		inv_grid.add_child(slot)
+	if _inv_filter == "all":
+		for i in Data.INVENTORY_SIZE:
+			_add_inv_slot(inv_grid, i, Game.inventory[i] if i < Game.inventory.size() else null)
+	else:
+		var item_indices: Array[int] = []
+		var empty_indices: Array[int] = []
+		for i in Game.inventory.size():
+			var it: GameItem = Game.inventory[i]
+			if it == null:
+				empty_indices.append(i)
+			elif _matches_inv_filter(it):
+				item_indices.append(i)
+		var total_cells := maxi(28, int(ceil(float(item_indices.size()) / 7.0)) * 7)
+		var empty_cursor := 0
+		for pos in total_cells:
+			if pos < item_indices.size():
+				var idx := item_indices[pos]
+				_add_inv_slot(inv_grid, idx, Game.inventory[idx])
+			else:
+				var empty_idx := empty_indices[empty_cursor] if empty_cursor < empty_indices.size() else -1
+				if empty_cursor < empty_indices.size():
+					empty_cursor += 1
+				_add_inv_slot(inv_grid, empty_idx, null)
+
+	if inv_scroll_y > 0:
+		inv_scroll.set_deferred("scroll_vertical", inv_scroll_y)
 
 	if not _stats_open:
 		_stats_scroll = null
@@ -531,7 +577,7 @@ func _stat_row(name_text: String, value_text: String, color: Color) -> HBoxConta
 
 func _toggle_stats() -> void:
 	_stats_open = not _stats_open
-	resize_keep_origin(Vector2(760, 620) if _stats_open else Vector2(410, 620), true, true)
+	resize_keep_origin(Vector2(820, 640) if _stats_open else Vector2(480, 640), true, true)
 	refresh()
 
 
@@ -549,6 +595,32 @@ func _on_equip_clicked(slot: ItemSlot, item: GameItem, _button: int) -> void:
 	if item == null:
 		return
 	Game.unequip(slot.slot_id)
+
+
+func _add_inv_slot(grid: GridContainer, index: int, item: GameItem) -> void:
+	var slot := ItemSlot.new(INV_CELL, "")
+	slot.inv_index = index
+	slot.set_item(item)
+	slot.clicked.connect(_on_inv_clicked)
+	slot.hovered.connect(_on_slot_hovered)
+	slot.unhovered.connect(_on_slot_unhovered)
+	slot.dropped.connect(_on_item_dropped)
+	grid.add_child(slot)
+
+
+func _matches_inv_filter(item: GameItem) -> bool:
+	if item == null or _inv_filter == "all":
+		return true
+	match _inv_filter:
+		"weapon":
+			return item.slot == "main" or item.slot == "off"
+		"armor":
+			return item.slot in ["head", "chest", "hands", "legs", "feet"]
+		"jewel":
+			return item.slot in ["neck", "ring", "trinket"]
+		"rune":
+			return item.slot == "rune"
+	return true
 
 
 func _on_inv_clicked(_slot: ItemSlot, item: GameItem, button: int) -> void:

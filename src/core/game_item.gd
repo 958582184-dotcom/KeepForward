@@ -463,6 +463,7 @@ func score(class_id: String) -> float:
 	s += stat_total("armor") * 0.10
 	s += stat_total("hp") * 0.025
 	s += (weapon_min + weapon_max) * 0.5 * 1.5
+	s += float(quality) * (22.0 + float(ilvl) * 2.5)
 	return s
 
 

@@ -230,6 +230,7 @@ func _build_equipment_view(box: VBoxContainer) -> void:
 		var slot := ItemSlot.new(cell, key)
 		slot.position = BackpackWindow.EQ_POS.get(key, Vector2.ZERO)
 		slot.set_score_class(String(_view_member.get("class_id", "warrior")))
+		slot.set_owner_level(int(_view_member.get("level", 1)))
 		slot.set_item(item)
 		slot.hovered.connect(func(_s, it): _show_team_item_tip(it))
 		slot.unhovered.connect(func(_s): _tip.hide_tip())

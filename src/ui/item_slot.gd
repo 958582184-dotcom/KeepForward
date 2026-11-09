@@ -12,6 +12,7 @@ var inv_index := -1
 var cell := 44
 var paper := false
 var score_class := ""
+var owner_level := -1
 var _hover := false
 var _built := false
 var _drag_started := false
@@ -90,13 +91,18 @@ func set_score_class(cid: String) -> void:
 		_refresh()
 
 
+func set_owner_level(level: int) -> void:
+	owner_level = level
+	if _built:
+		_refresh()
+
+
 func set_paper(enabled: bool) -> void:
 	paper = enabled
 	if _built:
 		_empty.add_theme_color_override("font_color", Color("#c6a46b"))
-		_ilvl.add_theme_color_override("font_color", Color("#d8bc86") if paper else UiKit.COL_MUTED)
 		_lock.add_theme_color_override("font_color", Color("#f0c976") if paper else UiKit.COL_GOLD)
-		queue_redraw()
+		_refresh()
 
 
 func _refresh() -> void:
@@ -104,7 +110,10 @@ func _refresh() -> void:
 		return
 	_icon.texture = UiKit.icon_for_item(item)
 	_icon.visible = item != null
-	_ilvl.text = str(Game.item_power(item, score_class)) if item != null else ""
+	_ilvl.text = str(item.req_level) if item != null else ""
+	var usable_level := owner_level if owner_level >= 0 else Game.level
+	var level_color := Color("#ff6b5e") if item != null and item.req_level > usable_level else (Color("#d8bc86") if paper else UiKit.COL_MUTED)
+	_ilvl.add_theme_color_override("font_color", level_color)
 	_ilvl.visible = item != null
 	_lock.visible = item != null and item.locked
 	_empty.visible = item == null
@@ -128,15 +137,19 @@ func _draw() -> void:
 		border = Color(0.58, 0.43, 0.24)
 	if item != null:
 		border = item.quality_color()
-	draw_rect(Rect2(Vector2(1, 1), size - Vector2(2, 2)), border, false, 2.0)
+	draw_rect(Rect2(Vector2(1, 1), size - Vector2(2, 2)), border, false, 1.5)
+	var bevel_light := border.lightened(0.32)
+	var bevel_dark := border.darkened(0.38)
+	draw_line(Vector2(1, 1), Vector2(size.x - 1, 1), bevel_light, 1.0)
+	draw_line(Vector2(1, 1), Vector2(1, size.y - 1), bevel_light, 1.0)
+	draw_line(Vector2(1, size.y - 1), Vector2(size.x - 1, size.y - 1), bevel_dark, 1.0)
+	draw_line(Vector2(size.x - 1, 1), Vector2(size.x - 1, size.y - 1), bevel_dark, 1.0)
 	if paper:
 		draw_rect(Rect2(Vector2(4, 4), size - Vector2(8, 8)), Color(0.78, 0.60, 0.34, 0.22), false, 1.0)
 		draw_circle(Vector2(5, 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
 		draw_circle(Vector2(size.x - 5, 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
 		draw_circle(Vector2(5, size.y - 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
 		draw_circle(Vector2(size.x - 5, size.y - 5), 1.5, Color(0.82, 0.64, 0.36, 0.55))
-	if item != null:
-		draw_rect(Rect2(3, 3, size.x - 6, 2), border)
 
 
 func _gui_input(event: InputEvent) -> void:
