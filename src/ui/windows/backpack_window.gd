@@ -43,7 +43,7 @@ var _stats_scroll: ScrollContainer
 
 func _init() -> void:
 	title = "背包"
-	window_size = Vector2(760, 570)
+	window_size = Vector2(760, 620)
 
 
 func _after_build() -> void:
@@ -326,7 +326,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	left.add_child(inv_head)
 
 	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(370, 134)
+	inv_scroll.custom_minimum_size = Vector2(370, 184)
 	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inv_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	left.add_child(inv_scroll)
@@ -531,7 +531,7 @@ func _stat_row(name_text: String, value_text: String, color: Color) -> HBoxConta
 
 func _toggle_stats() -> void:
 	_stats_open = not _stats_open
-	resize_keep_origin(Vector2(760, 570) if _stats_open else Vector2(410, 570), true, true)
+	resize_keep_origin(Vector2(760, 620) if _stats_open else Vector2(410, 620), true, true)
 	refresh()
 
 
