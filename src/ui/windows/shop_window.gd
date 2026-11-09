@@ -100,7 +100,7 @@ func _make_cell(item: GameItem, index: int) -> PanelContainer:
 
 func _show_tip(item: GameItem) -> void:
 	if _tip != null:
-		_tip.show_item(item, null, Game.class_id, "点击价格购买", false)
+		_tip.show_item(item, Game.compare_item(item), Game.class_id, "点击价格购买", true)
 
 
 func _hide_tip() -> void:

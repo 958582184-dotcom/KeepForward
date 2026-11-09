@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.72.0"
+const VERSION := "0.73.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
