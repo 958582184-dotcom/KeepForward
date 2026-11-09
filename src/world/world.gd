@@ -315,7 +315,8 @@ func _run_dungeon(d: Dictionary) -> bool:
 				hud.add_log("本局未获得装备", UiKit.COL_MUTED, "summary")
 			else:
 				hud.add_log("副本完成 · 获得装备：%s" % "、".join(loot_names), UiKit.COL_GREEN, "battle")
-				hud.add_log("获得装备：%s" % "、".join(loot_names), UiKit.COL_GREEN, "summary")
+				for it in loot:
+					hud.add_log("获得装备：%s" % it.item_name, it.quality_color(), "summary")
 		await _wait(0.5)
 	return cleared
 

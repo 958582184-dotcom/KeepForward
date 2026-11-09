@@ -471,10 +471,12 @@ func _on_team_battle_finished(win: bool) -> void:
 		var lines: Array = []
 		for d in reward.get("items", []):
 			if d is Dictionary:
-				lines.append(String(d.get("name", "装备")))
+				var item_name := String(d.get("name", "装备"))
+				lines.append(item_name)
+				add_log("获得装备：%s" % item_name,
+					Data.quality_color(int(d.get("q", 0))), "summary")
 		if not lines.is_empty():
 			add_log("个人掉落：%s" % "、".join(lines), UiKit.COL_GREEN, "battle")
-			add_log("获得装备：%s" % "、".join(lines), UiKit.COL_GREEN, "summary")
 		add_log("战斗奖励：+%d 经验  +%d 金币" % [int(reward.get("exp", 0)), int(reward.get("gold", 0))],
 			UiKit.COL_GREEN, "battle")
 		add_log("获得经验 +%d · 金币 +%d" % [int(reward.get("exp", 0)), int(reward.get("gold", 0))],
