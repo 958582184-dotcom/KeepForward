@@ -49,6 +49,8 @@ var auto_mode := "next"
 var auto_equip := true
 var auto_sell := false
 var auto_dismantle := false
+var sell_below_equipped := false
+var dismantle_below_equipped := false
 var sell_qualities: Array[int] = [0, 1, 2, 3, 4]
 var dismantle_qualities: Array[int] = [0, 1, 2, 3, 4]
 var current_dungeon: Dictionary = {}
@@ -168,6 +170,8 @@ func new_game(cid: String) -> void:
 	auto_equip = true
 	auto_sell = false
 	auto_dismantle = false
+	sell_below_equipped = false
+	dismantle_below_equipped = false
 	sell_qualities = [0, 1, 2, 3, 4]
 	dismantle_qualities = [0, 1, 2, 3, 4]
 	current_dungeon = {}
@@ -230,6 +234,8 @@ func save_game() -> void:
 		"auto_equip": auto_equip,
 		"auto_sell": auto_sell,
 		"auto_dismantle": auto_dismantle,
+		"sell_below": sell_below_equipped,
+		"dismantle_below": dismantle_below_equipped,
 		"sell_q": sell_qualities,
 		"dismantle_q": dismantle_qualities,
 		"shop_free": shop_free_left,
@@ -294,6 +300,8 @@ func load_game() -> bool:
 	auto_equip = bool(d.get("auto_equip", true))
 	auto_sell = bool(d.get("auto_sell", false))
 	auto_dismantle = bool(d.get("auto_dismantle", false))
+	sell_below_equipped = bool(d.get("sell_below", false))
+	dismantle_below_equipped = bool(d.get("dismantle_below", false))
 	sell_qualities = _quality_list(d.get("sell_q", [0, 1, 2, 3, 4]))
 	dismantle_qualities = _quality_list(d.get("dismantle_q", [0, 1, 2, 3, 4]))
 	shop_free_left = clampi(int(d.get("shop_free", Data.SHOP_FREE_PER_HOUR)), 0, Data.SHOP_FREE_PER_HOUR)
@@ -668,6 +676,16 @@ func set_auto_dismantle(value: bool) -> void:
 	toast.emit("自动分解装备：%s" % ("开" if value else "关"), Color("#c8d2df"))
 
 
+func set_sell_below(value: bool) -> void:
+	sell_below_equipped = value
+	_dirty = true
+
+
+func set_dismantle_below(value: bool) -> void:
+	dismantle_below_equipped = value
+	_dirty = true
+
+
 func _quality_list(raw: Variant) -> Array[int]:
 	var out: Array[int] = []
 	if raw is Array:
@@ -698,11 +716,34 @@ func set_dismantle_quality(q: int, enabled: bool) -> void:
 
 
 func _auto_sell_match(item: GameItem) -> bool:
-	return auto_sell and item != null and not item.locked and sell_qualities.has(int(item.quality))
+	if not auto_sell or item == null or item.locked or not sell_qualities.has(int(item.quality)):
+		return false
+	return not sell_below_equipped or _is_below_equipped(item)
 
 
 func _auto_dismantle_match(item: GameItem) -> bool:
-	return auto_dismantle and item != null and not item.locked and dismantle_qualities.has(int(item.quality))
+	if not auto_dismantle or item == null or item.locked or not dismantle_qualities.has(int(item.quality)):
+		return false
+	return not dismantle_below_equipped or _is_below_equipped(item)
+
+
+func _is_below_equipped(item: GameItem) -> bool:
+	if item == null:
+		return false
+	var current := compare_item(item)
+	return current != null and item.ilvl < current.ilvl
+
+
+func _matches_sell(item: GameItem) -> bool:
+	if item == null or item.locked or not sell_qualities.has(int(item.quality)):
+		return false
+	return not sell_below_equipped or _is_below_equipped(item)
+
+
+func _matches_dismantle(item: GameItem) -> bool:
+	if item == null or item.locked or not dismantle_qualities.has(int(item.quality)):
+		return false
+	return not dismantle_below_equipped or _is_below_equipped(item)
 
 
 func _sell_item_value(item: GameItem) -> int:
@@ -719,6 +760,8 @@ func sell_selected_unlocked() -> void:
 	for i in inventory.size():
 		var it: GameItem = inventory[i]
 		if it == null or it.locked or not sell_qualities.has(int(it.quality)):
+			continue
+		if sell_below_equipped and not _is_below_equipped(it):
 			continue
 		total += _sell_item_value(it)
 		inventory[i] = null
@@ -739,6 +782,8 @@ func dismantle_selected_unlocked() -> void:
 	for i in inventory.size():
 		var it: GameItem = inventory[i]
 		if it == null or it.locked or not dismantle_qualities.has(int(it.quality)):
+			continue
+		if dismantle_below_equipped and not _is_below_equipped(it):
 			continue
 		total += _dismantle_item_value(it)
 		inventory[i] = null
@@ -1582,6 +1627,8 @@ func debug_seed() -> void:
 	auto_equip = true
 	auto_sell = false
 	auto_dismantle = false
+	sell_below_equipped = false
+	dismantle_below_equipped = false
 	sell_qualities = [0, 1, 2, 3, 4]
 	dismantle_qualities = [0, 1, 2, 3, 4]
 	current_dungeon = {}

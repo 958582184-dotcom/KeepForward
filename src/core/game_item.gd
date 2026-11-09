@@ -305,6 +305,7 @@ static func create_dungeon_drop(rng: RandomNumberGenerator, level: int, q: int, 
 static func create_set_piece(rng: RandomNumberGenerator, set_id: String, slot: String,
 		level: int, q: int, class_id: String) -> GameItem:
 	var d := Data.set_def(set_id)
+	q = Data.nearest_allowed_quality(q, Data.set_allowed_qualities(set_id))
 	var it := create(rng, level, q, class_id, slot, "drop")
 	it.set_id = set_id
 	it.set_name = String(d.get("name", set_id))

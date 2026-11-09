@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.81.0"
+const VERSION := "0.82.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -439,6 +439,37 @@ static func quality_color(q: int) -> Color:
 
 static func set_def(set_id: String) -> Dictionary:
 	return SETS.get(set_id, {})
+
+
+static func set_allowed_qualities(set_id: String) -> Array:
+	var d := set_def(set_id)
+	if d.is_empty():
+		return [0, 1, 2, 3, 4]
+	var explicit: Variant = d.get("qualities", null)
+	if explicit is Array:
+		return explicit
+	var max_count := int(d.get("max", 2))
+	var track := String(d.get("track", "armor"))
+	if track == "jewel":
+		return [2, 3, 4] if max_count >= 3 else [1, 2, 3]
+	if max_count >= 5:
+		return [2, 3, 4]
+	if max_count == 3:
+		return [1, 2, 3]
+	return [0, 1, 2]
+
+
+static func nearest_allowed_quality(q: int, allowed: Array) -> int:
+	if allowed.is_empty() or allowed.has(q):
+		return clampi(q, 0, 4)
+	var best := int(allowed[0])
+	var best_dist := absi(best - q)
+	for v in allowed:
+		var dist := absi(int(v) - q)
+		if dist < best_dist:
+			best = int(v)
+			best_dist = dist
+	return clampi(best, 0, 4)
 
 
 static func set_candidates(class_id: String, slot: String) -> Array:

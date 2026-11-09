@@ -3,7 +3,7 @@ extends BaseWindow
 
 const EQ_CELL := 50
 const EQ_BIG_CELL := 50
-const INV_CELL := 36
+const INV_CELL := 42
 const EQ_POS := {
 	"head": Vector2(150, 50),
 	"chest": Vector2(150, 110),
@@ -35,13 +35,15 @@ var _dismantle_auto_off: CheckBox
 var _dismantle_auto_on: CheckBox
 var _sell_quality_checks: Array = []
 var _dismantle_quality_checks: Array = []
+var _sell_below_check: CheckBox
+var _dismantle_below_check: CheckBox
 var _set_expanded: Dictionary = {}
 var _stats_scroll: ScrollContainer
 
 
 func _init() -> void:
 	title = "背包"
-	window_size = Vector2(740, 550)
+	window_size = Vector2(760, 570)
 
 
 func _after_build() -> void:
@@ -143,6 +145,19 @@ func _make_action_menu(is_sell: bool) -> PanelContainer:
 	var blank := Control.new()
 	blank.custom_minimum_size = Vector2(0, 22)
 	grid.add_child(blank)
+	var below := CheckBox.new()
+	below.text = "低于当前装备等级"
+	below.add_theme_color_override("font_color", UiKit.COL_MUTED)
+	if is_sell:
+		_sell_below_check = below
+	else:
+		_dismantle_below_check = below
+	below.toggled.connect(func(enabled: bool):
+		if is_sell:
+			Game.set_sell_below(enabled)
+		else:
+			Game.set_dismantle_below(enabled))
+	v.add_child(below)
 	var action := UiKit.button("出售" if is_sell else "分解", 11)
 	action.custom_minimum_size = Vector2(0, 26)
 	action.pressed.connect(func():
@@ -166,6 +181,8 @@ func _sync_action_menus() -> void:
 		_sell_quality_checks[q].set_pressed_no_signal(Game.sell_qualities.has(q))
 	for q in _dismantle_quality_checks.size():
 		_dismantle_quality_checks[q].set_pressed_no_signal(Game.dismantle_qualities.has(q))
+	_sell_below_check.set_pressed_no_signal(Game.sell_below_equipped)
+	_dismantle_below_check.set_pressed_no_signal(Game.dismantle_below_equipped)
 
 
 func _open_sell_menu() -> void:
@@ -250,12 +267,12 @@ func _refresh_body(box: VBoxContainer) -> void:
 
 	# 左：装备 + 背包
 	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(350, 0)
+	left.custom_minimum_size = Vector2(370, 0)
 	left.add_theme_constant_override("separation", 6)
 	main.add_child(left)
 
 	var doll := PaperDoll.new()
-	doll.custom_minimum_size = Vector2(350, 320)
+	doll.custom_minimum_size = Vector2(370, 320)
 	left.add_child(doll)
 	var equip_lv := UiKit.label("装备等级 %d" % int(stats.get("ilvl", 1)), 12, Color("#3d2a17"))
 	equip_lv.position = Vector2(6, 4)
@@ -292,7 +309,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 		slot.set_paper(true)
 
 	var inv_head := HBoxContainer.new()
-	inv_head.custom_minimum_size = Vector2(350, 22)
+	inv_head.custom_minimum_size = Vector2(370, 22)
 	inv_head.add_theme_constant_override("separation", 5)
 	inv_head.add_child(UiKit.label("背包", 12, UiKit.COL_GOLD))
 	inv_head.add_child(UiKit.label("%d/%d" % [Game.inventory_count(), Data.INVENTORY_SIZE], 10, UiKit.COL_MUTED))
@@ -309,13 +326,13 @@ func _refresh_body(box: VBoxContainer) -> void:
 	left.add_child(inv_head)
 
 	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(350, 118)
+	inv_scroll.custom_minimum_size = Vector2(370, 134)
 	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inv_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	left.add_child(inv_scroll)
 
 	var inv_grid := GridContainer.new()
-	inv_grid.columns = 8
+	inv_grid.columns = 7
 	inv_grid.add_theme_constant_override("h_separation", 4)
 	inv_grid.add_theme_constant_override("v_separation", 4)
 	var inv_center := CenterContainer.new()
@@ -521,7 +538,7 @@ func _stat_row(name_text: String, value_text: String, color: Color) -> HBoxConta
 
 func _toggle_stats() -> void:
 	_stats_open = not _stats_open
-	resize_keep_origin(Vector2(740, 550) if _stats_open else Vector2(390, 550), true, true)
+	resize_keep_origin(Vector2(760, 570) if _stats_open else Vector2(410, 570), true, true)
 	refresh()
 
 
