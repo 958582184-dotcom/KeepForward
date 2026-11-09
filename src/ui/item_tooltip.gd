@@ -67,8 +67,8 @@ func show_item(item: GameItem, compare: GameItem, class_id: String, hint: String
 
 func _add_item_block(parent: VBoxContainer, item: GameItem, class_id: String) -> void:
 	parent.add_child(UiKit.label(item.item_name, 16, item.quality_color()))
-	parent.add_child(UiKit.label("装等 %d  ·  %s  ·  %s" % [item.ilvl, item.slot_name(), item.quality_name()],
-		11, UiKit.COL_MUTED))
+	parent.add_child(UiKit.label("战力 %d  ·  %s  ·  %s" % [Game.item_power(item, class_id), item.slot_name(),
+		item.quality_name()], 11, UiKit.COL_MUTED))
 	var can_use := Game.level >= item.req_level
 	parent.add_child(UiKit.label("穿戴等级 %d%s" % [item.req_level, "" if can_use else "（角色等级不足）"],
 		11, UiKit.COL_MUTED if can_use else UiKit.COL_RED))

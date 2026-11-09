@@ -146,7 +146,7 @@ func _make_action_menu(is_sell: bool) -> PanelContainer:
 	blank.custom_minimum_size = Vector2(0, 22)
 	grid.add_child(blank)
 	var below := CheckBox.new()
-	below.text = "低于当前装备等级"
+	below.text = "低于当前装备评分"
 	below.add_theme_color_override("font_color", UiKit.COL_MUTED)
 	if is_sell:
 		_sell_below_check = below
@@ -274,7 +274,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	var doll := PaperDoll.new()
 	doll.custom_minimum_size = Vector2(370, 320)
 	left.add_child(doll)
-	var equip_lv := UiKit.label("装备等级 %d" % int(stats.get("ilvl", 1)), 12, Color("#3d2a17"))
+	var equip_lv := UiKit.label("战力 %s" % UiKit.num(Game.combat_power()), 12, Color("#3d2a17"))
 	equip_lv.position = Vector2(6, 4)
 	doll.add_child(equip_lv)
 	var toggle := UiKit.button("◀" if _stats_open else "▶", 12)
@@ -394,13 +394,6 @@ func _refresh_body(box: VBoxContainer) -> void:
 	level_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	level_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	char_head.add_child(level_label)
-	var power_gap := Control.new()
-	power_gap.custom_minimum_size = Vector2(40, 0)
-	char_head.add_child(power_gap)
-	var power_label := UiKit.label("战力 %s" % UiKit.num(Game.combat_power()), 11, UiKit.COL_GOLD)
-	power_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	power_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	char_head.add_child(power_label)
 	char_head.add_child(UiKit.spacer())
 	info.add_child(char_head)
 	var exp_bar := UiKit.progress(Game.exp, Game.exp_to_next(), 6, UiKit.COL_TEAL)

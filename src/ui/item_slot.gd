@@ -11,6 +11,7 @@ var slot_id := ""
 var inv_index := -1
 var cell := 44
 var paper := false
+var score_class := ""
 var _hover := false
 var _built := false
 var _drag_started := false
@@ -52,7 +53,7 @@ func _build() -> void:
 	_empty.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_empty)
 
-	_ilvl = UiKit.label("", 11, UiKit.COL_MUTED)
+	_ilvl = UiKit.label("", 9, UiKit.COL_MUTED)
 	_ilvl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ilvl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(_ilvl)
@@ -72,13 +73,19 @@ func _layout() -> void:
 	var s := float(cell) * 0.72
 	_icon.size = Vector2(s, s)
 	_icon.position = ((size - Vector2(s, s)) * 0.5).round()
-	_ilvl.size = Vector2(26, 14)
-	_ilvl.position = Vector2(size.x - 27, size.y - 15)
+	_ilvl.size = Vector2(38, 14)
+	_ilvl.position = Vector2(size.x - 39, size.y - 15)
 	_lock.position = Vector2(3, 1)
 
 
 func set_item(new_item: GameItem) -> void:
 	item = new_item
+	if _built:
+		_refresh()
+
+
+func set_score_class(cid: String) -> void:
+	score_class = cid
 	if _built:
 		_refresh()
 
@@ -97,7 +104,7 @@ func _refresh() -> void:
 		return
 	_icon.texture = UiKit.icon_for_item(item)
 	_icon.visible = item != null
-	_ilvl.text = str(item.ilvl) if item != null else ""
+	_ilvl.text = str(Game.item_power(item, score_class)) if item != null else ""
 	_ilvl.visible = item != null
 	_lock.visible = item != null and item.locked
 	_empty.visible = item == null

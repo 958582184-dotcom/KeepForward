@@ -336,8 +336,32 @@ func load_game() -> bool:
 					inventory[i] = legacy_ring2
 					break
 	_remove_test_items()
+	var normalized := _normalize_saved_set_qualities()
 	loaded = true
+	if normalized:
+		save_game()
 	return true
+
+
+func _normalize_saved_set_qualities() -> bool:
+	var changed := false
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it != null and it.set_id != "":
+			var q := Data.nearest_allowed_quality(it.quality, Data.set_allowed_qualities(it.set_id))
+			if q != it.quality:
+				it.quality = q
+				changed = true
+	for i in inventory.size():
+		var it: GameItem = inventory[i]
+		if it != null and it.set_id != "":
+			var q := Data.nearest_allowed_quality(it.quality, Data.set_allowed_qualities(it.set_id))
+			if q != it.quality:
+				it.quality = q
+				changed = true
+	if changed:
+		_dirty = true
+	return changed
 
 
 func _remove_test_items() -> void:
@@ -731,7 +755,7 @@ func _is_below_equipped(item: GameItem) -> bool:
 	if item == null:
 		return false
 	var current := compare_item(item)
-	return current != null and item.ilvl < current.ilvl
+	return current != null and item_power(item) < item_power(current)
 
 
 func _matches_sell(item: GameItem) -> bool:
@@ -927,6 +951,13 @@ func unequip(key: String) -> void:
 	inventory_changed.emit()
 	stats_changed.emit()
 	_dirty = true
+
+
+func item_power(item: GameItem, cid: String = "") -> int:
+	if item == null:
+		return 0
+	var owner := cid if cid != "" else class_id
+	return int(round(item.score(owner)))
 
 
 func combat_power() -> int:
@@ -1146,8 +1177,8 @@ func sort_inventory() -> void:
 	items.sort_custom(func(a, b):
 		if a.locked != b.locked:
 			return a.locked
-		if a.ilvl != b.ilvl:
-			return a.ilvl > b.ilvl
+		if item_power(a) != item_power(b):
+			return item_power(a) > item_power(b)
 		if a.quality != b.quality:
 			return a.quality > b.quality
 		return a.slot < b.slot)
