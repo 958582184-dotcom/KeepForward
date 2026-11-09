@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.91.0"
+const VERSION := "0.92.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -393,7 +393,7 @@ const SHOP_STOCK_SIZE := 8
 const SHOP_LEVEL_RANGE := 10
 const SHOP_FREE_PER_HOUR := 5
 const SHOP_PAID_COST := 100
-const SHOP_QUALITY_WEIGHTS := [58, 30, 9.5, 2.0, 0.5]
+const SHOP_QUALITY_WEIGHTS := [20, 40, 23, 15, 2]
 const QUALITY_PRICE_MULT := [1.0, 2.2, 5.0, 12.0, 28.0]
 
 # 副本掉落：0-2 件，稀有度整体压低紫色及以上
