@@ -285,7 +285,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	equip_lv.position = Vector2(6, 4)
 	doll.add_child(equip_lv)
 	var toggle := UiKit.button("◀" if _stats_open else "▶", 12)
-	toggle.position = Vector2(374, 286)
+	toggle.position = Vector2(304, 286)
 	toggle.custom_minimum_size = Vector2(32, 26)
 	toggle.size = Vector2(32, 26)
 	toggle.clip_contents = false
@@ -295,7 +295,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	toggle.add_theme_stylebox_override("hover", UiKit.stylebox(Color(0.16, 0.14, 0.11, 0.95), UiKit.COL_GOLD, 1, 2))
 	toggle.pressed.connect(_toggle_stats)
 	var toggle_frame := PanelContainer.new()
-	toggle_frame.position = Vector2(372, 284)
+	toggle_frame.position = Vector2(302, 284)
 	toggle_frame.custom_minimum_size = Vector2(36, 30)
 	toggle_frame.size = Vector2(36, 30)
 	toggle_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -316,7 +316,8 @@ func _refresh_body(box: VBoxContainer) -> void:
 		slot.set_paper(true)
 
 	var inv_head := HBoxContainer.new()
-	inv_head.custom_minimum_size = Vector2(420, 22)
+	inv_head.custom_minimum_size = Vector2(350, 22)
+	inv_head.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	inv_head.add_theme_constant_override("separation", 5)
 	inv_head.add_child(UiKit.label("背包", 12, UiKit.COL_GOLD))
 	inv_head.add_child(UiKit.label("%d/%d" % [Game.inventory_count(), Data.INVENTORY_SIZE], 10, UiKit.COL_MUTED))
@@ -337,14 +338,14 @@ func _refresh_body(box: VBoxContainer) -> void:
 	inv_row.add_theme_constant_override("separation", 6)
 	left.add_child(inv_row)
 	var tabs := VBoxContainer.new()
-	tabs.custom_minimum_size = Vector2(50, 204)
-	tabs.add_theme_constant_override("separation", 4)
+	tabs.custom_minimum_size = Vector2(56, 204)
+	tabs.add_theme_constant_override("separation", 8)
 	inv_row.add_child(tabs)
 	for f in [["all", "全部"], ["weapon", "武器"], ["armor", "防具"], ["jewel", "饰品"], ["rune", "符文"]]:
 		var key := String(f[0])
 		var tab_key := key
 		var tab := UiKit.button(String(f[1]), 10)
-		tab.custom_minimum_size = Vector2(50, 26)
+		tab.custom_minimum_size = Vector2(56, 28)
 		tab.add_theme_color_override("font_color", UiKit.COL_GOLD if _inv_filter == key else UiKit.COL_MUTED)
 		if _inv_filter == key:
 			tab.add_theme_stylebox_override("normal",
@@ -355,7 +356,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 			refresh())
 		tabs.add_child(tab)
 	var inv_scroll := ScrollContainer.new()
-	inv_scroll.custom_minimum_size = Vector2(364, 204)
+	inv_scroll.custom_minimum_size = Vector2(358, 204)
 	inv_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inv_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	inv_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
