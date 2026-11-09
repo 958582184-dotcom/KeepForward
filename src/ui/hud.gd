@@ -261,6 +261,7 @@ func _on_state_changed() -> void:
 
 
 func _on_level_up(level: int) -> void:
+	add_log("升级！Lv.%d" % level, UiKit.COL_GREEN, "summary")
 	if world != null and world.has_method("show_level_up"):
 		world.show_level_up(level)
 
@@ -446,6 +447,7 @@ func _on_party_changed() -> void:
 
 func _on_team_battle(result: Dictionary) -> void:
 	_team_result = result
+	add_log("组队战斗开始", UiKit.COL_GOLD, "summary")
 	_close_all_now()
 	if world != null:
 		world.start_team_battle(result)
@@ -463,8 +465,13 @@ func _on_team_battle_finished(win: bool) -> void:
 				lines.append(String(d.get("name", "装备")))
 		if not lines.is_empty():
 			add_log("个人掉落：%s" % "、".join(lines), UiKit.COL_GREEN, "battle")
+			add_log("获得装备：%s" % "、".join(lines), UiKit.COL_GREEN, "summary")
 		add_log("战斗奖励：+%d 经验  +%d 金币" % [int(reward.get("exp", 0)), int(reward.get("gold", 0))],
 			UiKit.COL_GREEN, "battle")
+		add_log("获得经验 +%d · 金币 +%d" % [int(reward.get("exp", 0)), int(reward.get("gold", 0))],
+			UiKit.COL_GREEN, "summary")
+	add_log("战斗结束 · %s" % ("胜利" if win else "失败"),
+		UiKit.COL_GREEN if win else UiKit.COL_RED, "summary")
 	if world != null:
 		world.set_party_members(Net.members)
 	Net.on_team_battle_finished(win)

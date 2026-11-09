@@ -49,6 +49,7 @@ var auto_mode := "next"
 var auto_equip := true
 var auto_sell := false
 var current_dungeon: Dictionary = {}
+var last_normal_dungeon: Dictionary = {}
 var busy := false
 var loaded := false
 var metrics := {
@@ -768,6 +769,24 @@ func combat_power() -> int:
 		var it: GameItem = equipment.get(key)
 		if it != null:
 			total += it.score(class_id)
+	var cls := Data.class_def(class_id)
+	var main_key := String(cls.get("main", "strength"))
+	var base: Dictionary = cls.get("base", {})
+	var growth: Dictionary = cls.get("growth", {})
+	for key in ["strength", "agility", "intellect", "stamina"]:
+		var value := float(base.get(key, 0.0)) + float(growth.get(key, 0.0)) * float(level - 1)
+		var weight := 2.2 if key == main_key else (1.1 if key == "stamina" else 0.5)
+		total += value * weight
+	var set_bonus := 0.0
+	for entry in active_sets():
+		var sd := Data.set_def(String(entry.get("id", "")))
+		var bonuses: Dictionary = sd.get("bonuses", {})
+		for threshold in bonuses:
+			if int(entry.get("count", 0)) < int(threshold):
+				continue
+			for key in bonuses[threshold]:
+				set_bonus += float(bonuses[threshold][key]) * 300.0
+	total += set_bonus
 	return int(round(total))
 
 
@@ -1251,7 +1270,7 @@ func _roll_dungeon() -> Dictionary:
 
 func make_boss_dungeon() -> Dictionary:
 	var area := current_area()
-	var boss_level := clampi(level, int(area["min_level"]), int(area["max_level"]))
+	var boss_level := int(area["max_level"])
 	return {
 		"uid": rng.randi(),
 		"zone": "区域首领",
@@ -1281,9 +1300,12 @@ func next_dungeon() -> Dictionary:
 
 
 func repeat_dungeon() -> Dictionary:
-	if current_dungeon.is_empty():
+	var source: Dictionary = current_dungeon
+	if source.is_empty() or String(source.get("kind", "normal")) == "boss":
+		source = last_normal_dungeon
+	if source.is_empty():
 		return next_level_dungeon()
-	var d := current_dungeon.duplicate(true)
+	var d := source.duplicate(true)
 	d["uid"] = rng.randi()
 	return d
 

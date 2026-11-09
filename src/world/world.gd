@@ -164,6 +164,8 @@ func start_dungeon(d: Dictionary, auto_continue: bool = false) -> void:
 	_busy = true
 	_set_character_idle(false)
 	Game.current_dungeon = d
+	if String(d.get("kind", "normal")) != "boss":
+		Game.last_normal_dungeon = d.duplicate(true)
 	Game.set_busy(true)
 	var title := Data.dungeon_title(d)
 	var is_boss_run: bool = String(d.get("kind", "normal")) == "boss"
@@ -179,10 +181,16 @@ func start_dungeon(d: Dictionary, auto_continue: bool = false) -> void:
 	if hud != null:
 		hud.set_stage("%s  0/%d" % [title, d["monsters"].size()])
 		if is_boss_run:
-			hud.add_log("进入 %s" % title, UiKit.COL_GOLD)
+			hud.add_log("副本开始：%s" % title, UiKit.COL_GOLD, "summary")
 		else:
-			hud.add_log("进入 %s（%s）" % [title, Data.DIFFICULTIES[d["difficulty"]]["name"]], UiKit.COL_GOLD)
+			hud.add_log("副本开始：%s（%s）" % [title, Data.DIFFICULTIES[d["difficulty"]]["name"]],
+				UiKit.COL_GOLD, "summary")
 	var cleared: bool = await _run_dungeon(d)
+	if hud != null:
+		if cleared:
+			hud.add_log("副本结束 · 通关：%s" % title, UiKit.COL_GREEN, "summary")
+		else:
+			hud.add_log("战斗失败：%s" % title, UiKit.COL_RED, "summary")
 	if cleared:
 		Game.save_game()
 	if _player_bar != null:
@@ -209,8 +217,6 @@ func start_dungeon(d: Dictionary, auto_continue: bool = false) -> void:
 	if not cleared:
 		Game.set_auto_mode("off")
 		return
-	if Game.boss_ready():
-		return
 	if Game.auto_mode != "off":
 		await _wait(0.6)
 		if Game.auto_mode == "off":
@@ -225,10 +231,11 @@ func resume_auto(delay: float = 0.6) -> void:
 		return
 	if _busy or Game.auto_mode == "off" or Game.class_id == "":
 		return
-	if Game.boss_ready():
-		return
 	if Game.inventory_count() >= Data.INVENTORY_SIZE and not Game.auto_sell:
 		Game.toast.emit("背包已满，自动副本暂停", Color("#ff7b72"))
+		return
+	if Game.boss_ready():
+		start_dungeon(Game.make_boss_dungeon(), true)
 		return
 	_auto_token += 1
 	var token := _auto_token
@@ -236,6 +243,7 @@ func resume_auto(delay: float = 0.6) -> void:
 	if token != _auto_token or _busy or Game.auto_mode == "off":
 		return
 	if Game.boss_ready():
+		start_dungeon(Game.make_boss_dungeon(), true)
 		return
 	var d: Dictionary = Game.pick_auto_dungeon()
 	if d.is_empty():
@@ -286,6 +294,8 @@ func _run_dungeon(d: Dictionary) -> bool:
 		if hud != null:
 			hud.add_log("击败 Lv.%d %s  ·  +%d 金币  +%d 经验" % [lvl, label, gains["gold"], gains["exp"]],
 				UiKit.COL_GREEN, "battle")
+			hud.add_log("获得经验 +%d · 金币 +%d" % [gains["exp"], gains["gold"]],
+				UiKit.COL_GREEN, "summary")
 		_floating_text(root.position + Vector2(0, -70),
 			"+%d EXP   +%d 金币" % [gains["exp"], gains["gold"]], Color("#ffd76a"), 12)
 		await _fade_out(root, 0.30)
@@ -304,12 +314,14 @@ func _run_dungeon(d: Dictionary) -> bool:
 		Game.bump_metric("dungeons")
 		if hud != null:
 			if is_boss:
-				hud.add_log("区域首领已击败 · 探索度清零", UiKit.COL_GOLD)
+				hud.add_log("区域首领已击败 · 探索度清零", UiKit.COL_GOLD, "summary")
 			hud.add_log("状态已恢复", UiKit.COL_GREEN)
 			if loot_names.is_empty():
 				hud.add_log("副本完成 · 未掉落装备", UiKit.COL_GREEN, "battle")
+				hud.add_log("本局未获得装备", UiKit.COL_MUTED, "summary")
 			else:
 				hud.add_log("副本完成 · 获得装备：%s" % "、".join(loot_names), UiKit.COL_GREEN, "battle")
+				hud.add_log("获得装备：%s" % "、".join(loot_names), UiKit.COL_GREEN, "summary")
 		await _wait(0.5)
 	return cleared
 
