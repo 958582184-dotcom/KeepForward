@@ -2,15 +2,15 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.98.0"
+const VERSION := "0.99.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
 
 const TEAM_PORT := 45872
 const TEAM_DISCOVERY_PORT := 45871
-const TEAM_ENEMY_ATTACK_SCALE := 0.45
-const TEAM_ENEMY_HP_SCALE := 1.35
+const TEAM_ENEMY_ATTACK_SCALE := 1.3
+const TEAM_ENEMY_HP_SCALE := 1.45
 
 const CLASS_ORDER := ["warrior", "mage", "archer"]
 const CHARACTER_ORDER := ["warrior", "mage", "archer", "warden", "oracle", "ranger"]
