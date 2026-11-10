@@ -17,6 +17,7 @@ signal metrics_changed
 
 const AUTO_MODES := ["repeat", "next", "off"]
 const ITEM_STAT_REV := 3
+const LEVEL_RESET_REV := 1
 
 var rng := RandomNumberGenerator.new()
 
@@ -218,6 +219,7 @@ func save_game() -> void:
 	var payload := {
 		"version": 3,
 		"stat_rev": ITEM_STAT_REV,
+		"level_reset_rev": LEVEL_RESET_REV,
 		"class": class_id,
 		"level": level,
 		"exp": exp,
@@ -292,6 +294,12 @@ func load_game() -> bool:
 		area_exploration[area_index] = float(d.get("explore", 0.0))
 	if saved_clears.is_empty():
 		area_clear_counts[area_index] = int(d.get("clears", 0))
+	var reset_level := int(d.get("level_reset_rev", 0)) < LEVEL_RESET_REV
+	if reset_level:
+		level = 10
+		exp = int(round(float(Data.exp_to_next(10)) * 0.99))
+		area_index = 0
+		area_clear_counts = [0, 0, 0]
 	var saved_metrics: Dictionary = d.get("metrics", {})
 	for key in metrics:
 		metrics[key] = int(saved_metrics.get(key, 0))
@@ -343,7 +351,7 @@ func load_game() -> bool:
 	if rebuild_stats:
 		_migrate_legacy_item_stats()
 	loaded = true
-	if normalized or rebuild_stats:
+	if normalized or rebuild_stats or reset_level:
 		save_game()
 	return true
 
@@ -875,7 +883,20 @@ func current_area() -> Dictionary:
 
 
 func area_unlocked(index: int) -> bool:
-	return Data.area_unlocked(index, level)
+	if index <= 0:
+		return index == 0
+	if index >= Data.AREAS.size():
+		return false
+	return area_clear_counts[index - 1] > 0
+
+
+func level_cap() -> int:
+	var unlocked_area := 0
+	for i in range(Data.AREAS.size() - 1):
+		if area_clear_counts[i] <= 0:
+			break
+		unlocked_area = i + 1
+	return int(Data.AREAS[unlocked_area]["max_level"])
 
 
 func set_area(index: int) -> bool:
@@ -884,8 +905,7 @@ func set_area(index: int) -> bool:
 	if index == area_index:
 		return false
 	if not area_unlocked(index):
-		var need_level := int(Data.AREAS[index]["min_level"])
-		toast.emit("需要 Lv.%d 解锁 %s" % [need_level, String(Data.AREAS[index]["name"])], Color("#ff7b72"))
+		toast.emit("需要先击败上一区域首领，才能解锁 %s" % String(Data.AREAS[index]["name"]), Color("#ff7b72"))
 		return false
 	area_index = index
 	current_dungeon = {}
@@ -1226,14 +1246,17 @@ func add_exp(amount: int) -> void:
 	if amount <= 0:
 		return
 	exp += amount
+	var cap := mini(Data.MAX_LEVEL, level_cap())
 	var leveled := false
-	while level < Data.MAX_LEVEL:
+	while level < cap:
 		var need := Data.exp_to_next(level)
 		if exp < need:
 			break
 		exp -= need
 		level += 1
 		leveled = true
+	if level >= cap:
+		exp = mini(exp, maxi(0, Data.exp_to_next(level) - 1))
 	if leveled:
 		level_up.emit(level)
 		toast.emit("升级！现在是 Lv.%d" % level, Color("#ffd76a"))
@@ -1285,12 +1308,18 @@ func grant_kill(mon: Dictionary, diff: String) -> Dictionary:
 		bump_metric("bosses")
 
 	if type_id == "boss":
+		area_clears += 1
 		add_gold(gold_gain + 150)
 		add_exp(exp_gain + 100)
 		exploration = 0.0
-		area_clears += 1
 		exploration_changed.emit()
-		toast.emit("区域首领被击败，探索度已重置", Color("#ff9f43"))
+		var next_area := ""
+		if area_index + 1 < Data.AREAS.size():
+			next_area = String(Data.AREAS[area_index + 1]["name"])
+		if next_area != "":
+			toast.emit("区域首领已击败 · 解锁 %s · 等级上限 Lv.%d" % [next_area, level_cap()], Color("#ff9f43"))
+		else:
+			toast.emit("区域首领已击败 · 等级上限 Lv.%d" % level_cap(), Color("#ff9f43"))
 	else:
 		add_gold(gold_gain)
 		add_exp(exp_gain)

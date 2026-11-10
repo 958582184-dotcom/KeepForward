@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "1.00.0"
+const VERSION := "1.01.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -396,7 +396,7 @@ const MONSTER_TYPES := {
 		"explore": 0.75, "drop_chance": 0.25, "quality": [55, 30, 12, 3, 0]},
 	"elite": {"name": "精英", "hp": 1.9, "dmg": 1.35, "exp": 3.2, "gold": 4.0,
 		"explore": 2.5, "drop_chance": 1.0, "quality": [0, 40, 40, 18, 2]},
-	"boss": {"name": "区域首领", "hp": 19.0, "dmg": 4.5, "exp": 14.0, "gold": 25.0,
+	"boss": {"name": "区域首领", "hp": 7.0, "dmg": 1.84, "exp": 14.0, "gold": 25.0,
 		"explore": 0.0, "drop_chance": 1.0, "quality": [0, 0, 18, 55, 27]},
 }
 

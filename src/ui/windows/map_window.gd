@@ -136,7 +136,7 @@ func _area_side(index: int, role: String, left: bool, width: int) -> Button:
 		name_text = String(area["name"])
 		name_col = Color(String(area["color"])) if unlocked else UiKit.COL_DIM
 		if not unlocked:
-			hint = "需 Lv.%d" % int(area["min_level"])
+			hint = "需击败上一区域首领"
 	b.tooltip_text = hint if hint != "" else b.tooltip_text
 	var name_label := UiKit.label(name_text, 13, name_col)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -191,10 +191,11 @@ func _update_footer_info() -> void:
 			levels += int(m.get("level", 1))
 			powers += _member_power(m)
 		var avg := float(levels) / float(Net.members.size())
-		_footer_info.text = "%d 人  ·  平均 Lv.%.1f  ·  总战力 %s" % [
-			Net.members.size(), avg, UiKit.num(powers)]
+		_footer_info.text = "%d 人  ·  平均 Lv.%.1f  ·  上限 Lv.%d  ·  总战力 %s" % [
+			Net.members.size(), avg, Game.level_cap(), UiKit.num(powers)]
 	else:
-		_footer_info.text = "Lv.%d  ·  战力 %s" % [Game.level, UiKit.num(Game.combat_power())]
+		_footer_info.text = "Lv.%d / 上限 %d  ·  战力 %s" % [
+			Game.level, Game.level_cap(), UiKit.num(Game.combat_power())]
 	_footer_info.add_theme_color_override("font_color", UiKit.COL_GOLD if Net.in_party else UiKit.COL_MUTED)
 
 
