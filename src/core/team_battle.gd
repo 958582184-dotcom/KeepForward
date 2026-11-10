@@ -265,7 +265,10 @@ static func _build_rewards(dungeon: Dictionary, profiles: Array, rng: RandomNumb
 		if leader_id == "":
 			leader_id = str(int(profiles[0].get("id", 0)))
 			leader_class = String(profiles[0].get("character_id", "warrior"))
-		var artifact_ids: Array = Data.ARTIFACTS.keys()
+		var artifact_ids: Array = []
+		for id in Data.ARTIFACTS:
+			if Data.artifact_allowed_for_class(String(id), leader_class):
+				artifact_ids.append(id)
 		var artifact_id := String(artifact_ids[rng.randi_range(0, artifact_ids.size() - 1)])
 		var artifact := GameItem.create_artifact(rng, artifact_id, mon_level, leader_class)
 		rewards[leader_id]["items"].append(artifact.to_dict())

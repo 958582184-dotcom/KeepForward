@@ -656,7 +656,11 @@ func add_item(item: GameItem) -> bool:
 
 
 func _can_use_item(item: GameItem) -> bool:
-	return item != null and int(item.req_level) <= level
+	if item == null or int(item.req_level) > level:
+		return false
+	if item.uniq != "" and not Data.artifact_allowed_for_class(item.uniq, class_id):
+		return false
+	return true
 
 
 func receive_drop(item: GameItem) -> void:
@@ -1372,6 +1376,12 @@ func _pick_artifact_id() -> String:
 		if not owned.has(id):
 			missing.append(id)
 	var pool: Array = Data.ARTIFACTS.keys()
+	var allowed: Array = []
+	for id in pool:
+		if Data.artifact_allowed_for_class(String(id), class_id):
+			allowed.append(id)
+	pool = allowed
+	missing = missing.filter(func(id): return Data.artifact_allowed_for_class(String(id), class_id))
 	if not missing.is_empty() and rng.randf() < 0.7:
 		pool = missing
 	return String(pool[rng.randi_range(0, pool.size() - 1)])

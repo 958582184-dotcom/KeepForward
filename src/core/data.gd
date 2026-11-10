@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "1.06.0"
+const VERSION := "1.07.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -166,34 +166,34 @@ const QUALITIES := [
 ]
 
 const ARTIFACTS := {
-	"burn_world": {"name": "焚世", "slot": "main", "weapon": "axe", "school": "berserker",
+	"burn_world": {"name": "焚世", "slot": "main", "weapon": "axe", "school": "berserker", "cls": "warrior",
 		"effect": "焚尽", "score": 130,
 		"desc": "每次攻击使目标受到的伤害 +3%，最多 5 层；目标生命低于 30% 时，额外造成其最大生命 8% 的伤害"},
-	"starfall": {"name": "星陨", "slot": "main", "weapon": "staff", "school": "arcane",
+	"starfall": {"name": "星陨", "slot": "main", "weapon": "staff", "school": "arcane", "cls": "mage",
 		"effect": "陨落", "score": 95,
 		"desc": "战斗开始时法术强度 +15%，每回合递减 3%，最低为 0"},
-	"windcut": {"name": "断风", "slot": "main", "weapon": "longbow", "school": "hunt",
+	"windcut": {"name": "断风", "slot": "main", "weapon": "longbow", "school": "hunt", "cls": "archer",
 		"effect": "断风", "score": 120,
 		"desc": "每第 2 次攻击必定暴击；暴击伤害 +10%"},
-	"sleepless": {"name": "不眠之颅", "slot": "head", "armor": "plate", "school": "knight",
+	"sleepless": {"name": "不眠之颅", "slot": "head", "armor": "plate", "school": "knight", "cls": "warrior",
 		"effect": "不眠", "score": 90,
 		"desc": "生命低于 40% 时，每回合获得已损失生命 6% 的护盾，护盾上限为生命上限的 20%"},
-	"ember_robe": {"name": "余烬之衣", "slot": "chest", "armor": "cloth", "school": "moon",
+	"ember_robe": {"name": "余烬之衣", "slot": "chest", "armor": "cloth", "school": "moon", "cls": "mage",
 		"effect": "余烬", "score": 110,
 		"desc": "每场战斗首次受到致命伤害时免疫该次伤害，并回复 25% 生命上限"},
-	"broker_hands": {"name": "掮客之手", "slot": "hands", "armor": "leather", "school": "swift",
+	"broker_hands": {"name": "掮客之手", "slot": "hands", "armor": "leather", "school": "swift", "cls": "archer",
 		"effect": "掮客", "score": 70,
 		"desc": "暴击率 +10%；每次暴击使急速 +5%，最多 3 层"},
-	"lifeline": {"name": "命线", "slot": "neck", "school": "",
+	"lifeline": {"name": "命线", "slot": "neck", "school": "", "cls": "",
 		"effect": "命线", "score": 80,
 		"desc": "生命上限 +12%；每回合结束回复已损失生命 4%"},
-	"bloodpact": {"name": "血契", "slot": "ring", "school": "",
+	"bloodpact": {"name": "血契", "slot": "ring", "school": "", "cls": "",
 		"effect": "血契", "score": 100,
 		"desc": "吸血 +8%；治疗溢出转化为护盾，护盾上限为生命上限的 15%"},
-	"timesand": {"name": "时砂", "slot": "trinket", "school": "",
+	"timesand": {"name": "时砂", "slot": "trinket", "school": "", "cls": "",
 		"effect": "时砂", "score": 60,
 		"desc": "前 3 回合急速 +25%"},
-	"gravebell": {"name": "守墓人的钟", "slot": "trinket", "school": "",
+	"gravebell": {"name": "守墓人的钟", "slot": "trinket", "school": "", "cls": "",
 		"effect": "丧钟", "score": 85,
 		"desc": "受到伤害 -10%；每第 5 回合对怪物造成自身护甲 150% 的伤害"},
 }
@@ -500,6 +500,13 @@ static func quality_color(q: int) -> Color:
 
 static func artifact_def(uniq: String) -> Dictionary:
 	return ARTIFACTS.get(uniq, {})
+
+
+static func artifact_allowed_for_class(artifact_id: String, class_id: String) -> bool:
+	var owner := String(artifact_def(artifact_id).get("cls", ""))
+	if owner == "":
+		return true
+	return owner == String(character_def(class_id).get("archetype", class_id))
 
 
 static func set_def(set_id: String) -> Dictionary:

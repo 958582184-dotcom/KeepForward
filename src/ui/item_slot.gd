@@ -137,7 +137,14 @@ func _draw() -> void:
 		border = Color(0.58, 0.43, 0.24)
 	if item != null:
 		border = item.quality_color()
-	draw_rect(Rect2(Vector2(1, 1), size - Vector2(2, 2)), border, false, 1.5)
+	var legendary_weapon := item != null and item.quality == 4 and (item.slot == "main" or item.slot == "off")
+	var artifact := item != null and item.quality == 5
+	if legendary_weapon or artifact:
+		bg = bg.lerp(item.quality_color(), 0.35 if artifact else 0.32)
+		draw_rect(Rect2(Vector2(-1, -1), size + Vector2(2, 2)), Color(item.quality_color(), 0.38), false, 2.0)
+		border = item.quality_color().lightened(0.16)
+		draw_rect(Rect2(Vector2(3, 3), size - Vector2(6, 6)), Color(item.quality_color(), 0.42), false, 1.0)
+	draw_rect(Rect2(Vector2(1, 1), size - Vector2(2, 2)), border, false, 2.0 if legendary_weapon or artifact else 1.5)
 	if item != null:
 		var bevel_light := border.lightened(0.48)
 		var bevel_dark := border.darkened(0.55)
