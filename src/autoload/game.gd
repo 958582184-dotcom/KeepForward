@@ -17,7 +17,6 @@ signal metrics_changed
 
 const AUTO_MODES := ["repeat", "next", "off"]
 const ITEM_STAT_REV := 3
-const LEVEL_RESET_REV := 1
 
 var rng := RandomNumberGenerator.new()
 
@@ -219,7 +218,6 @@ func save_game() -> void:
 	var payload := {
 		"version": 3,
 		"stat_rev": ITEM_STAT_REV,
-		"level_reset_rev": LEVEL_RESET_REV,
 		"class": class_id,
 		"level": level,
 		"exp": exp,
@@ -294,12 +292,6 @@ func load_game() -> bool:
 		area_exploration[area_index] = float(d.get("explore", 0.0))
 	if saved_clears.is_empty():
 		area_clear_counts[area_index] = int(d.get("clears", 0))
-	var reset_level := int(d.get("level_reset_rev", 0)) < LEVEL_RESET_REV
-	if reset_level:
-		level = 10
-		exp = int(round(float(Data.exp_to_next(10)) * 0.99))
-		area_index = 0
-		area_clear_counts = [0, 0, 0]
 	var saved_metrics: Dictionary = d.get("metrics", {})
 	for key in metrics:
 		metrics[key] = int(saved_metrics.get(key, 0))
@@ -351,7 +343,7 @@ func load_game() -> bool:
 	if rebuild_stats:
 		_migrate_legacy_item_stats()
 	loaded = true
-	if normalized or rebuild_stats or reset_level:
+	if normalized or rebuild_stats:
 		save_game()
 	return true
 
