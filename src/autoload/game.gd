@@ -1405,7 +1405,7 @@ func grant_dungeon_loot(level: int, diff: String = "normal") -> Array:
 	var drops: Array = []
 	var shift := Data.dungeon_quality_shift(level, self.level, diff)
 	for i in count:
-		var q := Data.roll_quality(rng, Data.DUNGEON_QUALITY_WEIGHTS, shift)
+		var q := Data.roll_quality(rng, Data.dungeon_quality_weights(diff), shift)
 		var drop := GameItem.create_dungeon_drop(rng, level, q, class_id)
 		receive_drop(drop)
 		drops.append(drop)

@@ -241,7 +241,7 @@ static func _build_rewards(dungeon: Dictionary, profiles: Array, rng: RandomNumb
 		var count := Data.weighted_pick(rng, Data.DUNGEON_DROP_COUNT_WEIGHTS)
 		var shift := Data.dungeon_quality_shift(mon_level, plevel, diff)
 		for i in count:
-			var q := Data.roll_quality(rng, Data.DUNGEON_QUALITY_WEIGHTS, shift)
+			var q := Data.roll_quality(rng, Data.dungeon_quality_weights(diff), shift)
 			var drop := GameItem.create_dungeon_drop(rng, mon_level, q, String(p.get("character_id", "warrior")))
 			items.append(drop.to_dict())
 		var explore := 0.0

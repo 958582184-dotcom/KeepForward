@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "1.03.0"
+const VERSION := "1.04.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -449,12 +449,17 @@ const SHOP_STOCK_SIZE := 8
 const SHOP_LEVEL_RANGE := 10
 const SHOP_FREE_PER_HOUR := 5
 const SHOP_PAID_COST := 100
-const SHOP_QUALITY_WEIGHTS := [20, 40, 23, 15, 2]
+const SHOP_QUALITY_WEIGHTS := [15, 35, 28, 18, 4]
 const QUALITY_PRICE_MULT := [1.0, 2.2, 5.0, 12.0, 28.0, 60.0]
 
 # 副本掉落：0-2 件，稀有度整体压低紫色及以上
 const DUNGEON_DROP_COUNT_WEIGHTS := [30, 50, 20]
-const DUNGEON_QUALITY_WEIGHTS := [52, 32, 12, 3.5, 0.5]
+const DUNGEON_QUALITY_WEIGHTS_BY_DIFF := {
+	"normal": [45, 33, 15, 5.5, 1.5],
+	"elite": [10, 38, 30, 17, 5],
+	"hero": [0, 12, 38, 35, 15],
+}
+const DUNGEON_QUALITY_WEIGHTS := [45, 33, 15, 5.5, 1.5]
 const DROP_CATEGORY_WEIGHTS := [70, 22, 8]
 const DROP_EQUIP_SLOTS := ["head", "chest", "hands", "legs", "feet", "main", "off"]
 const DROP_EQUIP_WEIGHTS := [9, 9, 9, 9, 9, 13, 8]
@@ -728,11 +733,12 @@ static func shop_equip_levels(player_level: int) -> Array[int]:
 	return levels
 
 
-static func dungeon_quality_shift(mon_level: int, player_level: int, diff: String) -> int:
-	var d: Dictionary = DIFFICULTIES.get(diff, DIFFICULTIES["normal"])
-	var level_bonus := mini(2, int(mon_level / 10.0))
-	var gap_bonus := 1 if mon_level - player_level >= 5 else 0
-	return clampi(int(d.get("quality_shift", 0)) + level_bonus + gap_bonus, 0, 4)
+static func dungeon_quality_shift(mon_level: int, player_level: int, _diff: String) -> int:
+	return 1 if mon_level - player_level >= 5 else 0
+
+
+static func dungeon_quality_weights(diff: String) -> Array:
+	return DUNGEON_QUALITY_WEIGHTS_BY_DIFF.get(diff, DUNGEON_QUALITY_WEIGHTS_BY_DIFF["normal"])
 
 
 static func monster_display_name(type_id: String, level: int) -> String:
