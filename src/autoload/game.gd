@@ -16,7 +16,7 @@ signal log_added(text, color, kind)
 signal metrics_changed
 
 const AUTO_MODES := ["repeat", "next", "off"]
-const ITEM_STAT_REV := 2
+const ITEM_STAT_REV := 3
 
 var rng := RandomNumberGenerator.new()
 
@@ -352,16 +352,25 @@ func _migrate_legacy_item_stats() -> void:
 	for key in Data.EQUIP_ORDER:
 		var it: GameItem = equipment.get(key)
 		if it != null:
+			_sync_item_level(it)
 			GameItem.rebuild_stats(it, class_id, rng)
 	for i in inventory.size():
 		var it: GameItem = inventory[i]
 		if it != null:
+			_sync_item_level(it)
 			GameItem.rebuild_stats(it, class_id, rng)
 	for i in shop_stock.size():
 		var it: GameItem = shop_stock[i]
 		if it != null:
+			_sync_item_level(it)
 			GameItem.rebuild_stats(it, class_id, rng)
 	_dirty = true
+
+
+func _sync_item_level(it: GameItem) -> void:
+	it.ilvl = maxi(1, it.req_level)
+	if it.set_id != "":
+		it.set_level = it.ilvl
 
 
 func _normalize_saved_set_qualities() -> bool:

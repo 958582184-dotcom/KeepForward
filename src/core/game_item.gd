@@ -42,6 +42,7 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 			upper = lower + 5
 		it.req_level = lower if lower == upper or rng.randf() < 0.5 else upper
 	it.req_level = Data.normalize_equip_tier(it.req_level)
+	it.ilvl = it.req_level
 	it.quality = clampi(q, 0, 4)
 	it.source = source_tag
 	it.slot = slot_hint if slot_hint != "" else _pick_slot(rng)
@@ -351,7 +352,7 @@ static func create_set_piece(rng: RandomNumberGenerator, set_id: String, slot: S
 	var it := create(rng, level, q, class_id, slot, "drop")
 	it.set_id = set_id
 	it.set_name = String(d.get("name", set_id))
-	it.set_level = level
+	it.set_level = it.ilvl
 	it.item_name = String((d.get("pieces", {}) as Dictionary).get(slot, it.item_name))
 	if it.slot != "neck" and it.slot != "ring" and it.slot != "trinket":
 		it.armor_type = String(d.get("armor_type", it.armor_type))
