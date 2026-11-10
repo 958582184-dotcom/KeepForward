@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "1.08.0"
+const VERSION := "1.09.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -666,24 +666,73 @@ const AREA_MONSTER_STEPS := [
 	{"hp": 2.6, "dmg": 2.2},
 ]
 
+const DUNGEON_TARGET_STRENGTH := {
+	"normal": {11: 3976.0, 12: 4175.0, 13: 4374.0, 14: 4572.0, 15: 4771.0, 16: 5368.0, 17: 5616.0, 18: 5865.0, 19: 6113.0, 20: 6362.0},
+	"elite": {11: 5765.0, 12: 6053.0, 13: 6342.0, 14: 6630.0, 15: 6918.0, 16: 7783.0, 17: 8143.0, 18: 8504.0, 19: 8864.0, 20: 9225.0},
+	"hero": {11: 7356.0, 12: 7724.0, 13: 8091.0, 14: 8459.0, 15: 8827.0, 16: 9928.0, 17: 10388.0, 18: 10849.0, 19: 11309.0, 20: 11769.0},
+}
+
+const DUNGEON_TARGET_REC := {
+	11: {"normal": 1820, "elite": 2190, "hero": 2470},
+	12: {"normal": 1860, "elite": 2240, "hero": 2530},
+	13: {"normal": 1900, "elite": 2290, "hero": 2590},
+	14: {"normal": 1950, "elite": 2350, "hero": 2650},
+	15: {"normal": 1990, "elite": 2400, "hero": 2710},
+	16: {"normal": 2110, "elite": 2540, "hero": 2870},
+	17: {"normal": 2160, "elite": 2600, "hero": 2940},
+	18: {"normal": 2200, "elite": 2660, "hero": 3000},
+	19: {"normal": 2250, "elite": 2710, "hero": 3060},
+	20: {"normal": 2300, "elite": 2770, "hero": 3120},
+}
+
 
 static func area_monster_factor(level: int) -> Dictionary:
 	var tier := clampi(int((level - 1) / 10), 0, AREA_MONSTER_STEPS.size() - 1)
 	return AREA_MONSTER_STEPS[tier]
 
 
-static func monster_hp(type_id: String, level: int, diff: String) -> float:
+static func _monster_hp_raw(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
 	var step: Dictionary = area_monster_factor(level)
 	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"]) * enemy_level_exponent(level) * enemy_early_factor(level) * float(step["hp"]) * MONSTER_GLOBAL_HP_MULT
 
 
-static func monster_damage(type_id: String, level: int, diff: String) -> float:
+static func _monster_damage_raw(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
 	var step: Dictionary = area_monster_factor(level)
 	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"]) * enemy_level_exponent(level) * enemy_early_factor(level) * float(step["dmg"]) * MONSTER_GLOBAL_DMG_MULT
+
+
+static func dungeon_strength_scale(level: int, diff: String) -> float:
+	var table: Dictionary = DUNGEON_TARGET_STRENGTH.get(diff, {})
+	var target := float(table.get(level, 0.0))
+	if target <= 0.0:
+		return 1.0
+	var total_hp := 0.0
+	var total_dmg := 0.0
+	for type_id in ["normal", "normal", "normal", "elite"]:
+		total_hp += _monster_hp_raw(type_id, level, diff)
+		total_dmg += _monster_damage_raw(type_id, level, diff)
+	var raw := sqrt(total_hp * total_dmg / 4.0)
+	if raw <= 0.0:
+		return 1.0
+	return target / raw
+
+
+static func monster_hp(type_id: String, level: int, diff: String) -> float:
+	var raw := _monster_hp_raw(type_id, level, diff)
+	if type_id == "boss":
+		return raw
+	return raw * dungeon_strength_scale(level, diff)
+
+
+static func monster_damage(type_id: String, level: int, diff: String) -> float:
+	var raw := _monster_damage_raw(type_id, level, diff)
+	if type_id == "boss":
+		return raw
+	return raw * dungeon_strength_scale(level, diff)
 
 
 static func monster_armor(level: int) -> float:
@@ -777,6 +826,13 @@ static func dungeon_title(d: Dictionary) -> String:
 static func recommended_combat_power(d: Dictionary, reference_level: int = 0) -> int:
 	var lv := int(d.get("level", 1))
 	var diff := String(d.get("difficulty", "normal"))
+	if String(d.get("kind", "normal")) != "boss" and DUNGEON_TARGET_REC.has(lv):
+		var row: Dictionary = DUNGEON_TARGET_REC[lv]
+		var fixed := float(row.get(diff, 0))
+		if reference_level > 0:
+			fixed *= 1.0 + 0.12 * float(maxi(0, lv - reference_level))
+		return int(round(fixed / 10.0)) * 10
+
 	var quality_ref := 1
 	match diff:
 		"elite":
@@ -790,8 +846,6 @@ static func recommended_combat_power(d: Dictionary, reference_level: int = 0) ->
 		rec = float(_reference_gear_cp(lv, 4)) * boss_power / maxf(1.0, hero_power)
 	if reference_level > 0:
 		rec *= 1.0 + 0.12 * float(maxi(0, lv - reference_level))
-	var step := area_monster_factor(lv)
-	rec *= sqrt(float(step["hp"]) * float(step["dmg"]))
 	return int(round(rec / 10.0)) * 10
 
 

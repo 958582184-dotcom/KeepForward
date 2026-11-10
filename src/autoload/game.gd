@@ -16,7 +16,7 @@ signal log_added(text, color, kind)
 signal metrics_changed
 
 const AUTO_MODES := ["repeat", "next", "off"]
-const ITEM_STAT_REV := 3
+const ITEM_STAT_REV := 4
 
 var rng := RandomNumberGenerator.new()
 

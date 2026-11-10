@@ -244,6 +244,15 @@ static func _build_rewards(dungeon: Dictionary, profiles: Array, rng: RandomNumb
 			var q := Data.roll_quality(rng, Data.dungeon_quality_weights(diff), shift)
 			var drop := GameItem.create_dungeon_drop(rng, mon_level, q, String(p.get("character_id", "warrior")))
 			items.append(drop.to_dict())
+		if is_boss:
+			var artifact_ids: Array = []
+			var member_class := String(p.get("character_id", "warrior"))
+			for artifact_key in Data.ARTIFACTS:
+				if Data.artifact_allowed_for_class(String(artifact_key), member_class):
+					artifact_ids.append(artifact_key)
+			var artifact_id := String(artifact_ids[rng.randi_range(0, artifact_ids.size() - 1)])
+			var artifact := GameItem.create_artifact(rng, artifact_id, mon_level, member_class)
+			items.append(artifact.to_dict())
 		var explore := 0.0
 		if bool(p.get("is_leader", false)) and not is_boss:
 			explore = float(Data.EXPLORE_CLEAR_GAIN.get(diff, 1.0))
@@ -254,23 +263,4 @@ static func _build_rewards(dungeon: Dictionary, profiles: Array, rng: RandomNumb
 			"explore": explore,
 			"metrics": {"kills": kills, "bosses": bosses, "items": items.size(), "dungeons": 1},
 		}
-	if is_boss and not rewards.is_empty():
-		var leader_id := ""
-		var leader_class := "warrior"
-		for p in profiles:
-			if bool(p.get("is_leader", false)):
-				leader_id = str(int(p.get("id", 0)))
-				leader_class = String(p.get("character_id", "warrior"))
-				break
-		if leader_id == "":
-			leader_id = str(int(profiles[0].get("id", 0)))
-			leader_class = String(profiles[0].get("character_id", "warrior"))
-		var artifact_ids: Array = []
-		for id in Data.ARTIFACTS:
-			if Data.artifact_allowed_for_class(String(id), leader_class):
-				artifact_ids.append(id)
-		var artifact_id := String(artifact_ids[rng.randi_range(0, artifact_ids.size() - 1)])
-		var artifact := GameItem.create_artifact(rng, artifact_id, mon_level, leader_class)
-		rewards[leader_id]["items"].append(artifact.to_dict())
-		rewards[leader_id]["metrics"]["items"] = int(rewards[leader_id]["metrics"]["items"]) + 1
 	return rewards
