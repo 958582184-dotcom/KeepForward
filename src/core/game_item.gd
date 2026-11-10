@@ -86,6 +86,10 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 			it.style = "rune"
 
 	var budget := _stat_budget(it.slot, it.ilvl, it.quality)
+	if source_tag != "starter":
+		budget *= rng.randf_range(0.95, 1.05)
+	if is_rune:
+		budget *= rng.randf_range(0.90, 1.10)
 	var innate: Dictionary = Data.SLOT_INNATE_STAT.get(it.slot, {})
 	for key in innate:
 		var points := budget * float(innate[key])
