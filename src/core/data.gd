@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "1.04.0"
+const VERSION := "1.05.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -650,16 +650,30 @@ static func enemy_early_factor(level: int) -> float:
 			return 1.0
 
 
+const AREA_MONSTER_STEPS := [
+	{"hp": 1.0, "dmg": 1.0},
+	{"hp": 1.8, "dmg": 1.5},
+	{"hp": 2.6, "dmg": 2.2},
+]
+
+
+static func area_monster_factor(level: int) -> Dictionary:
+	var tier := clampi(int((level - 1) / 10), 0, AREA_MONSTER_STEPS.size() - 1)
+	return AREA_MONSTER_STEPS[tier]
+
+
 static func monster_hp(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
-	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"]) * enemy_level_exponent(level) * enemy_early_factor(level)
+	var step: Dictionary = area_monster_factor(level)
+	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"]) * enemy_level_exponent(level) * enemy_early_factor(level) * float(step["hp"])
 
 
 static func monster_damage(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
-	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"]) * enemy_level_exponent(level) * enemy_early_factor(level)
+	var step: Dictionary = area_monster_factor(level)
+	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"]) * enemy_level_exponent(level) * enemy_early_factor(level) * float(step["dmg"])
 
 
 static func monster_armor(level: int) -> float:
@@ -766,6 +780,8 @@ static func recommended_combat_power(d: Dictionary, reference_level: int = 0) ->
 		rec = float(_reference_gear_cp(lv, 4)) * boss_power / maxf(1.0, hero_power)
 	if reference_level > 0:
 		rec *= 1.0 + 0.12 * float(maxi(0, lv - reference_level))
+	var step := area_monster_factor(lv)
+	rec *= sqrt(float(step["hp"]) * float(step["dmg"]))
 	return int(round(rec / 10.0)) * 10
 
 
