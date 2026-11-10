@@ -152,6 +152,35 @@ static func _add_stat_points(it: GameItem, key: String, points: float) -> void:
 	it.stats[key] = int(it.stats.get(key, 0)) + value
 
 
+static func rebuild_stats(it: GameItem, class_id: String, rng: RandomNumberGenerator) -> void:
+	if it == null:
+		return
+	var template := create(rng, it.ilvl, it.quality, class_id, it.slot, "drop")
+	it.stats = template.stats.duplicate()
+	it.weapon_min = template.weapon_min
+	it.weapon_max = template.weapon_max
+	var cls := Data.class_def(class_id)
+	var kind := String(Data.SLOT_INFO.get(it.slot, {}).get("kind", "armor"))
+	var qmult := float(Data.QUALITY_STAT_MULT[clampi(it.quality, 0, 4)])
+	if kind == "armor" and it.armor_type != "":
+		it.stats["armor"] = round((6.0 + it.ilvl * 4.8) * qmult * _armor_type_scale(it.armor_type))
+	elif kind == "offhand" and it.weapon_type == "shield":
+		it.stats["armor"] = round((8.0 + it.ilvl * 4.5) * qmult)
+	elif kind == "weapon" and it.weapon_type != "":
+		var wscale := 1.0
+		if cls["main"] == "strength":
+			wscale = 1.12
+		elif cls["main"] == "agility":
+			wscale = 0.92
+		else:
+			wscale = 1.02
+		wscale *= _weapon_type_scale(it.weapon_type)
+		it.weapon_min = round((4.5 + it.ilvl * 1.6) * qmult * wscale)
+		it.weapon_max = round((8.0 + it.ilvl * 2.6) * qmult * wscale)
+	if kind == "rune":
+		it.rune_stat = String(template.rune_stat)
+
+
 static func _primary_budget(kind: String, ilvl: int) -> int:
 	var base := 10.0
 	var per_level := 2.0

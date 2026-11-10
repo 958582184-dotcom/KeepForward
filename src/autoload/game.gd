@@ -16,6 +16,7 @@ signal log_added(text, color, kind)
 signal metrics_changed
 
 const AUTO_MODES := ["repeat", "next", "off"]
+const ITEM_STAT_REV := 2
 
 var rng := RandomNumberGenerator.new()
 
@@ -216,6 +217,7 @@ func save_game() -> void:
 		inv.append(null if it == null else it.to_dict())
 	var payload := {
 		"version": 3,
+		"stat_rev": ITEM_STAT_REV,
 		"class": class_id,
 		"level": level,
 		"exp": exp,
@@ -337,10 +339,29 @@ func load_game() -> bool:
 					break
 	_remove_test_items()
 	var normalized := _normalize_saved_set_qualities()
+	var rebuild_stats := int(d.get("stat_rev", 0)) < ITEM_STAT_REV
+	if rebuild_stats:
+		_migrate_legacy_item_stats()
 	loaded = true
-	if normalized:
+	if normalized or rebuild_stats:
 		save_game()
 	return true
+
+
+func _migrate_legacy_item_stats() -> void:
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it != null:
+			GameItem.rebuild_stats(it, class_id, rng)
+	for i in inventory.size():
+		var it: GameItem = inventory[i]
+		if it != null:
+			GameItem.rebuild_stats(it, class_id, rng)
+	for i in shop_stock.size():
+		var it: GameItem = shop_stock[i]
+		if it != null:
+			GameItem.rebuild_stats(it, class_id, rng)
+	_dirty = true
 
 
 func _normalize_saved_set_qualities() -> bool:
