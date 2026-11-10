@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.97.0"
+const VERSION := "0.98.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -709,12 +709,36 @@ static func dungeon_title(d: Dictionary) -> String:
 static func recommended_combat_power(d: Dictionary, reference_level: int = 0) -> int:
 	var lv := int(d.get("level", 1))
 	var diff := String(d.get("difficulty", "normal"))
-	var actual := _dungeon_difficulty(d.get("monsters", ["normal"]), lv, diff, reference_level)
-	var baseline := _dungeon_difficulty(["normal", "normal", "normal", "elite"], lv, "normal", 0)
-	if baseline <= 0.0:
-		baseline = 1.0
-	var reference_cp := 80.0 * float(lv) + 200.0
-	return int(round(reference_cp * actual / baseline / 10.0)) * 10
+	var quality_ref := 1
+	match diff:
+		"elite":
+			quality_ref = 2
+		"hero":
+			quality_ref = 3
+	var rec := float(_reference_gear_cp(lv, quality_ref))
+	if String(d.get("kind", "normal")) == "boss":
+		var boss_power := _dungeon_difficulty(d.get("monsters", ["normal"]), lv, diff, 0)
+		var hero_power := _dungeon_difficulty(["normal", "normal", "normal", "elite"], lv, "hero", 0)
+		rec = float(_reference_gear_cp(lv, 4)) * boss_power / maxf(1.0, hero_power)
+	if reference_level > 0:
+		rec *= 1.0 + 0.12 * float(maxi(0, lv - reference_level))
+	return int(round(rec / 10.0)) * 10
+
+
+static func _reference_gear_cp(lv: int, q: int) -> int:
+	var base := 300.0
+	var per_level := 55.0
+	match q:
+		2:
+			base = 330.0
+			per_level = 59.0
+		3:
+			base = 410.0
+			per_level = 69.0
+		4:
+			base = 515.0
+			per_level = 87.0
+	return int(round((base + per_level * float(lv)) / 10.0)) * 10
 
 
 static func _dungeon_difficulty(monsters: Array, lv: int, diff: String, reference_level: int) -> float:
