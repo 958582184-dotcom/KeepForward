@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "1.05.0"
+const VERSION := "1.06.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -162,7 +162,7 @@ const QUALITIES := [
 	{"name": "精良", "color": "#4aa3ff", "mult": 1.14, "affixes": 3},
 	{"name": "史诗", "color": "#b96bff", "mult": 1.26, "affixes": 4},
 	{"name": "传说", "color": "#ff9f43", "mult": 1.42, "affixes": 5},
-	{"name": "神器", "color": "#ff3b30", "mult": 1.62, "affixes": 6},
+	{"name": "神器", "color": "#ff1f1f", "mult": 1.62, "affixes": 6},
 ]
 
 const ARTIFACTS := {
@@ -200,8 +200,8 @@ const ARTIFACTS := {
 
 const QUALITY_STAT_MULT := [1.00, 1.30, 1.70, 2.20, 2.80, 3.20]
 const SLOT_STAT_BASE := {
-	"head": 10.0, "chest": 12.0, "hands": 9.0, "legs": 11.0, "feet": 9.0,
-	"main": 12.0, "off": 8.5, "neck": 7.0, "ring": 7.0, "trinket": 7.0, "rune": 6.0,
+	"head": 10.0, "chest": 12.0, "hands": 12.0, "legs": 11.0, "feet": 14.0,
+	"main": 12.0, "off": 8.5, "neck": 15.0, "ring": 15.0, "trinket": 15.0, "rune": 13.0,
 }
 const SLOT_INNATE_STAT := {
 	"head": {"stamina": 0.30},
@@ -210,8 +210,8 @@ const SLOT_INNATE_STAT := {
 	"feet": {"agility": 0.30},
 	"hands": {"strength": 0.30},
 }
-const JEWEL_STAT_POOL := ["crit", "haste", "hit", "vers", "crit_dmg", "pen"]
-const RUNE_STAT_POOL := ["lifesteal", "hp_regen", "extra_attack", "dodge", "parry", "block"]
+const JEWEL_STAT_POOL := ["crit", "haste", "hit", "dodge", "block", "hp_regen"]
+const RUNE_STAT_POOL := ["crit_dmg", "pen", "vers", "lifesteal", "extra_attack", "parry"]
 const STAT_VALUE_SCALE := {
 	"strength": 1.0, "agility": 1.0, "intellect": 1.0, "stamina": 1.0,
 	"hp": 4.0, "armor": 2.2, "attack_power": 0.85, "spell_power": 0.85,
@@ -324,7 +324,7 @@ const AFFIX_KIND := {
 	"dodge": {"name": "闪避", "title": "灵巧", "div": 16.0, "percent": true},
 	"parry": {"name": "招架", "title": "铁壁", "div": 16.0, "percent": true},
 	"block": {"name": "格挡", "title": "壁垒", "div": 16.0, "percent": true},
-	"vers": {"name": "全能", "title": "均衡", "div": 12.0, "percent": true},
+	"vers": {"name": "伤害增幅", "title": "增幅", "div": 12.0, "percent": true},
 	"lifesteal": {"name": "吸血", "title": "汲血", "div": 15.0, "percent": true},
 	"pen": {"name": "穿透", "title": "破甲", "div": 10.0, "percent": true},
 	"crit_dmg": {"name": "暴击伤害", "title": "致命", "div": 10.0, "percent": true},
@@ -650,6 +650,9 @@ static func enemy_early_factor(level: int) -> float:
 			return 1.0
 
 
+const MONSTER_GLOBAL_HP_MULT := 1.30
+const MONSTER_GLOBAL_DMG_MULT := 1.25
+
 const AREA_MONSTER_STEPS := [
 	{"hp": 1.0, "dmg": 1.0},
 	{"hp": 1.8, "dmg": 1.5},
@@ -666,14 +669,14 @@ static func monster_hp(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
 	var step: Dictionary = area_monster_factor(level)
-	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"]) * enemy_level_exponent(level) * enemy_early_factor(level) * float(step["hp"])
+	return (38.0 + 22.0 * level) * 1.8 * float(t["hp"]) * float(d["hp"]) * enemy_level_exponent(level) * enemy_early_factor(level) * float(step["hp"]) * MONSTER_GLOBAL_HP_MULT
 
 
 static func monster_damage(type_id: String, level: int, diff: String) -> float:
 	var t: Dictionary = MONSTER_TYPES[type_id]
 	var d: Dictionary = DIFFICULTIES[diff]
 	var step: Dictionary = area_monster_factor(level)
-	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"]) * enemy_level_exponent(level) * enemy_early_factor(level) * float(step["dmg"])
+	return (3.0 + 1.65 * level) * 5.0 * float(t["dmg"]) * float(d["dmg"]) * enemy_level_exponent(level) * enemy_early_factor(level) * float(step["dmg"]) * MONSTER_GLOBAL_DMG_MULT
 
 
 static func monster_armor(level: int) -> float:
@@ -786,18 +789,18 @@ static func recommended_combat_power(d: Dictionary, reference_level: int = 0) ->
 
 
 static func _reference_gear_cp(lv: int, q: int) -> int:
-	var base := 300.0
-	var per_level := 55.0
+	var base := 370.0
+	var per_level := 71.0
 	match q:
 		2:
-			base = 330.0
-			per_level = 59.0
-		3:
 			base = 410.0
-			per_level = 69.0
+			per_level = 77.0
+		3:
+			base = 518.0
+			per_level = 93.0
 		4:
-			base = 515.0
-			per_level = 87.0
+			base = 640.0
+			per_level = 112.0
 	return int(round((base + per_level * float(lv)) / 10.0)) * 10
 
 

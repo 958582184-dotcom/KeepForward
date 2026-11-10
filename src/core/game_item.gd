@@ -97,30 +97,33 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 		stat_pool.erase(stat_key)
 	if stat_pool.is_empty():
 		stat_pool.append("stamina")
-	var stat_count := 2
-	if kind == "jewel" or kind == "rune":
-		stat_count = clampi(3 + (1 if it.quality >= 3 else 0), 3, 5)
+	if is_rune:
+		var rune_key := String(stat_pool[rng.randi_range(0, stat_pool.size() - 1)])
+		_add_stat_points(it, rune_key, budget)
+		it.rune_stat = rune_key
 	else:
-		stat_count = clampi(2 + int(it.quality / 2), 2, 4)
-	stat_count = mini(stat_count, stat_pool.size())
-	var chosen: Array = []
-	for i in stat_count:
-		var pos := rng.randi_range(0, stat_pool.size() - 1)
-		chosen.append(stat_pool[pos])
-		stat_pool.remove_at(pos)
-	var weights: Array = []
-	var weight_total := 0.0
-	for key in chosen:
-		var w := rng.randf_range(0.75, 1.25)
-		weights.append(w)
-		weight_total += w
-	var left := budget
-	for i in chosen.size():
-		var pts := left if i == chosen.size() - 1 else budget * float(weights[i]) / weight_total
-		left -= pts
-		_add_stat_points(it, String(chosen[i]), pts)
-	if is_rune and not chosen.is_empty():
-		it.rune_stat = String(chosen[0])
+		var stat_count := 2
+		if kind == "jewel":
+			stat_count = clampi(3 + (1 if it.quality >= 3 else 0), 3, 5)
+		else:
+			stat_count = clampi(2 + int(it.quality / 2), 2, 4)
+		stat_count = mini(stat_count, stat_pool.size())
+		var chosen: Array = []
+		for i in stat_count:
+			var pos := rng.randi_range(0, stat_pool.size() - 1)
+			chosen.append(stat_pool[pos])
+			stat_pool.remove_at(pos)
+		var weights: Array = []
+		var weight_total := 0.0
+		for key in chosen:
+			var w := rng.randf_range(0.75, 1.25)
+			weights.append(w)
+			weight_total += w
+		var left := budget
+		for i in chosen.size():
+			var pts := left if i == chosen.size() - 1 else budget * float(weights[i]) / weight_total
+			left -= pts
+			_add_stat_points(it, String(chosen[i]), pts)
 
 	it.item_name = _make_name(it, cls, rng)
 	it.price = int(round((40.0 + it.ilvl * 24.0) * float(Data.QUALITY_PRICE_MULT[it.quality]) \
@@ -506,21 +509,21 @@ func score(class_id: String) -> float:
 	s += stat_total("stamina") * 1.1
 	s += stat_total("attack_power") * 1.0
 	s += stat_total("spell_power") * 1.0
-	s += stat_total("crit") * 0.55
-	s += stat_total("haste") * 0.50
-	s += stat_total("hit") * 0.35
-	s += stat_total("crit_dmg") * 0.40
-	s += stat_total("vers") * 0.45
-	s += stat_total("pen") * 0.40
-	s += stat_total("lifesteal") * 0.35
-	s += stat_total("hp_regen") * 0.30
-	s += stat_total("extra_attack") * 0.40
-	s += stat_total("dodge") * 0.30
-	s += stat_total("parry") * 0.30
-	s += stat_total("block") * 0.30
+	s += stat_total("crit") * 0.80
+	s += stat_total("haste") * 0.75
+	s += stat_total("hit") * 0.65
+	s += stat_total("crit_dmg") * 1.00
+	s += stat_total("vers") * 1.20
+	s += stat_total("pen") * 1.20
+	s += stat_total("lifesteal") * 1.80
+	s += stat_total("hp_regen") * 1.80
+	s += stat_total("extra_attack") * 20.0
+	s += stat_total("dodge") * 1.20
+	s += stat_total("parry") * 1.20
+	s += stat_total("block") * 1.20
 	s += stat_total("armor") * 0.10
 	s += stat_total("hp") * 0.025
-	s += (weapon_min + weapon_max) * 0.5 * 1.5
+	s += (weapon_min + weapon_max) * 0.5 * 0.7
 	if uniq != "":
 		s += float(Data.artifact_def(uniq).get("score", 0.0))
 	s += float(quality) * 3.0 + float(ilvl) * 1.0

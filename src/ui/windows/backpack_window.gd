@@ -486,7 +486,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 		["闪避", UiKit.pct(stats["dodge_pct"]), UiKit.COL_TEXT],
 		["招架", UiKit.pct(stats["parry_pct"]), UiKit.COL_TEXT],
 		["格挡", UiKit.pct(stats["block_pct"]), UiKit.COL_TEXT],
-		["全能", UiKit.pct(stats["vers_pct"]), UiKit.COL_TEXT],
+		["伤害增幅", UiKit.pct(stats["vers_pct"]), UiKit.COL_TEXT],
 		["吸血", UiKit.pct(stats["lifesteal_pct"]), UiKit.COL_TEXT],
 		["生命回复", UiKit.num(int(stats["hp_regen"])), UiKit.COL_GREEN],
 		["额外攻击", UiKit.pct(stats["extra_attack_pct"]), UiKit.COL_TEAL],

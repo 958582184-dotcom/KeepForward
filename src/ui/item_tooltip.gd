@@ -66,8 +66,6 @@ func show_item(item: GameItem, compare: GameItem, class_id: String, hint: String
 
 
 func _add_item_block(parent: VBoxContainer, item: GameItem, class_id: String) -> void:
-	if item.quality == 5 and item.uniq != "":
-		parent.add_child(UiKit.label("首领掉落 · 神器", 10, Color("#ff8a80")))
 	parent.add_child(UiKit.label(item.item_name, 16, item.quality_color()))
 	parent.add_child(UiKit.label("评分 %d  ·  %s  ·  %s" % [Game.item_power(item, class_id), item.slot_name(),
 		item.quality_name()], 11, UiKit.COL_MUTED))
