@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.92.0"
+const VERSION := "0.93.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -163,6 +163,28 @@ const QUALITIES := [
 	{"name": "史诗", "color": "#b96bff", "mult": 1.26, "affixes": 4},
 	{"name": "传说", "color": "#ff9f43", "mult": 1.42, "affixes": 5},
 ]
+
+const QUALITY_STAT_MULT := [1.00, 1.30, 1.70, 2.20, 2.80]
+const SLOT_STAT_BASE := {
+	"head": 10.0, "chest": 12.0, "hands": 9.0, "legs": 11.0, "feet": 9.0,
+	"main": 12.0, "off": 8.5, "neck": 7.0, "ring": 7.0, "trinket": 7.0, "rune": 6.0,
+}
+const SLOT_INNATE_STAT := {
+	"head": {"stamina": 0.30},
+	"chest": {"stamina": 0.32},
+	"legs": {"stamina": 0.30},
+	"feet": {"agility": 0.30},
+	"hands": {"strength": 0.30},
+}
+const JEWEL_STAT_POOL := ["crit", "haste", "hit", "vers", "crit_dmg", "pen"]
+const RUNE_STAT_POOL := ["lifesteal", "hp_regen", "extra_attack", "dodge", "parry", "block"]
+const STAT_VALUE_SCALE := {
+	"strength": 1.0, "agility": 1.0, "intellect": 1.0, "stamina": 1.0,
+	"hp": 4.0, "armor": 2.2, "attack_power": 0.85, "spell_power": 0.85,
+	"crit": 1.0, "haste": 1.0, "hit": 0.9, "vers": 0.9, "pen": 0.9, "crit_dmg": 1.2,
+	"dodge": 0.9, "parry": 0.9, "block": 0.9,
+	"lifesteal": 0.55, "hp_regen": 0.55, "extra_attack": 0.06,
+}
 
 const QUALITY_PREFIX := ["磨损的", "坚固的", "精工的", "史诗的", "传世的"]
 

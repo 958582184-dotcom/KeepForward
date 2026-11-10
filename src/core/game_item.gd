@@ -46,97 +46,110 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 	it.source = source_tag
 	it.slot = slot_hint if slot_hint != "" else _pick_slot(rng)
 	var cls: Dictionary = Data.class_def(class_id)
-	var qm: float = float(Data.QUALITIES[it.quality]["mult"])
+	var qmult: float = float(Data.QUALITY_STAT_MULT[it.quality])
 	var kind: String = Data.SLOT_INFO.get(it.slot, {}).get("kind", "armor")
-	var archetype := String(Data.character_def(class_id).get("archetype", class_id))
+	var main_key := String(cls["main"])
 	var is_rune := kind == "rune"
-
 	it.stats = {}
-	var primary_total := _primary_budget(kind, it.ilvl)
-	if primary_total > 0:
-		var main_value := int(floor(float(primary_total) * 0.5))
-		if source_tag != "starter":
-			main_value = rng.randi_range(0, primary_total)
-		it.stats[cls["main"]] = main_value
-		it.stats["stamina"] = primary_total - main_value
 
 	match kind:
 		"armor":
 			it.armor_type = String(cls["armor_types"][rng.randi_range(0, cls["armor_types"].size() - 1)])
 			it.style = String(Data.ARMOR_STYLE_BY_TYPE.get(it.armor_type, "knight"))
-			it.stats["armor"] = round((8.0 + it.ilvl * 5.5) * qm * _armor_type_scale(it.armor_type))
+			it.stats["armor"] = round((6.0 + it.ilvl * 4.8) * qmult * _armor_type_scale(it.armor_type))
 		"weapon":
 			it.weapon_type = cls["weapon_types"][rng.randi_range(0, cls["weapon_types"].size() - 1)]
 			it.style = String(Data.WEAPON_STYLE.get(it.weapon_type, "knight"))
-			var scale := 1.0
+			var wscale := 1.0
 			if cls["main"] == "strength":
-				scale = 1.12
+				wscale = 1.12
 			elif cls["main"] == "agility":
-				scale = 0.92
+				wscale = 0.92
 			else:
-				scale = 1.02
-			scale *= _weapon_type_scale(it.weapon_type)
-			it.weapon_min = round((5.0 + it.ilvl * 1.8) * qm * scale)
-			it.weapon_max = round((9.0 + it.ilvl * 2.9) * qm * scale)
+				wscale = 1.02
+			wscale *= _weapon_type_scale(it.weapon_type)
+			it.weapon_min = round((4.5 + it.ilvl * 1.6) * qmult * wscale)
+			it.weapon_max = round((8.0 + it.ilvl * 2.6) * qmult * wscale)
 		"offhand":
 			it.weapon_type = cls["offhand_type"]
 			it.style = String(Data.WEAPON_STYLE.get(it.weapon_type, "knight"))
 			if it.weapon_type == "shield":
-				it.stats["armor"] = round((10.0 + it.ilvl * 5.0) * qm)
+				it.stats["armor"] = round((8.0 + it.ilvl * 4.5) * qmult)
 		"jewel":
 			it.armor_type = ""
 			it.style = String(Data.JEWEL_STYLES[rng.randi_range(0, Data.JEWEL_STYLES.size() - 1)])
 		"rune":
 			it.armor_type = ""
 			it.style = "rune"
-			it.rune_stat = String(Data.RUNE_STATS[rng.randi_range(0, Data.RUNE_STATS.size() - 1)])
-			it.stats[it.rune_stat] = round((3.0 + it.ilvl * 1.15) * qm)
 
-	var affix_count: int = int(Data.QUALITIES[it.quality]["affixes"])
-	var pool: Array = Data.RUNE_AFFIX_KEYS.duplicate() if is_rune else Data.AFFIX_KEYS.duplicate()
-	var weights: Dictionary = Data.AFFIX_WEIGHTS.get(archetype, {}).duplicate()
-	_style_weights(weights, it.style)
-	var remaining := affix_count
+	var budget := _stat_budget(it.slot, it.ilvl, it.quality)
+	var innate: Dictionary = Data.SLOT_INNATE_STAT.get(it.slot, {})
+	for key in innate:
+		var points := budget * float(innate[key])
+		_add_stat_points(it, key, points)
+		budget -= points
 
-	# 至少一条流派倾向词条
-	var style_pool: Array = Data.STYLE_AFFIX_POOL.get(it.style, [])
-	if remaining > 0 and not style_pool.is_empty():
-		var style_keys: Array = []
-		var style_weights: Array = []
-		for key in style_pool:
-			var w: float = float(weights.get(key, 0))
-			if w > 0.0 and not it.stats.has(key):
-				style_keys.append(key)
-				style_weights.append(w)
-		if not style_keys.is_empty():
-			var pick: int = Data.weighted_pick(rng, style_weights)
-			var key: String = style_keys[pick]
-			_add_affix(it, key, rng, qm)
-			pool.erase(key)
-			remaining -= 1
-
-	for i in remaining:
-		var usable: Array = []
-		var use_weights: Array = []
-		for key in pool:
-			if key == "extra_attack" and kind != "jewel" and kind != "rune":
-				continue
-			var tier := String(Data.AFFIX_TIERS.get(key, "A"))
-			var w: float = float(weights.get(key, 0)) * float(Data.AFFIX_TIER_WEIGHT.get(tier, 1.0))
-			if w > 0.0 and not it.stats.has(key):
-				usable.append(key)
-				use_weights.append(w)
-		if usable.is_empty():
-			break
-		var pick: int = Data.weighted_pick(rng, use_weights)
-		var key: String = usable[pick]
-		_add_affix(it, key, rng, qm)
-		pool.erase(key)
+	var stat_pool := _stat_pool(kind, main_key, cls)
+	for stat_key in it.stats:
+		stat_pool.erase(stat_key)
+	if stat_pool.is_empty():
+		stat_pool.append("stamina")
+	var stat_count := 2
+	if kind == "jewel" or kind == "rune":
+		stat_count = clampi(3 + (1 if it.quality >= 3 else 0), 3, 5)
+	else:
+		stat_count = clampi(2 + int(it.quality / 2), 2, 4)
+	stat_count = mini(stat_count, stat_pool.size())
+	var chosen: Array = []
+	for i in stat_count:
+		var pos := rng.randi_range(0, stat_pool.size() - 1)
+		chosen.append(stat_pool[pos])
+		stat_pool.remove_at(pos)
+	var weights: Array = []
+	var weight_total := 0.0
+	for key in chosen:
+		var w := rng.randf_range(0.75, 1.25)
+		weights.append(w)
+		weight_total += w
+	var left := budget
+	for i in chosen.size():
+		var pts := left if i == chosen.size() - 1 else budget * float(weights[i]) / weight_total
+		left -= pts
+		_add_stat_points(it, String(chosen[i]), pts)
+	if is_rune and not chosen.is_empty():
+		it.rune_stat = String(chosen[0])
 
 	it.item_name = _make_name(it, cls, rng)
 	it.price = int(round((40.0 + it.ilvl * 24.0) * float(Data.QUALITY_PRICE_MULT[it.quality]) \
 		* (1.0 + 0.10 * float(it.ilvl) + 0.008 * float(it.ilvl * it.ilvl))))
 	return it
+
+
+static func _stat_budget(slot: String, ilvl: int, q: int) -> float:
+	var base := float(Data.SLOT_STAT_BASE.get(slot, 9.0))
+	var level_mult := 1.0 + float(ilvl - 1) * 0.18
+	return base * level_mult * float(Data.QUALITY_STAT_MULT[clampi(q, 0, 4)])
+
+
+static func _stat_pool(kind: String, main_key: String, cls: Dictionary) -> Array:
+	match kind:
+		"armor":
+			return [main_key, "stamina", "hp"]
+		"weapon":
+			return [main_key, "stamina", "spell_power" if cls["attack_type"] == "magic" else "attack_power"]
+		"offhand":
+			return [main_key, "stamina", "armor"]
+		"jewel":
+			return Data.JEWEL_STAT_POOL.duplicate()
+		"rune":
+			return Data.RUNE_STAT_POOL.duplicate()
+	return ["stamina"]
+
+
+static func _add_stat_points(it: GameItem, key: String, points: float) -> void:
+	var scale := float(Data.STAT_VALUE_SCALE.get(key, 1.0))
+	var value := maxi(1, int(round(points * scale)))
+	it.stats[key] = int(it.stats.get(key, 0)) + value
 
 
 static func _primary_budget(kind: String, ilvl: int) -> int:
@@ -314,8 +327,8 @@ static func create_set_piece(rng: RandomNumberGenerator, set_id: String, slot: S
 	if it.slot != "neck" and it.slot != "ring" and it.slot != "trinket":
 		it.armor_type = String(d.get("armor_type", it.armor_type))
 		it.style = String(Data.ARMOR_STYLE_BY_TYPE.get(it.armor_type, it.style))
-		var qm := float(Data.QUALITIES[it.quality]["mult"])
-		it.stats["armor"] = round((8.0 + it.ilvl * 5.5) * qm * _armor_type_scale(it.armor_type))
+		var qm := float(Data.QUALITY_STAT_MULT[it.quality])
+		it.stats["armor"] = round((6.0 + it.ilvl * 4.8) * qm * _armor_type_scale(it.armor_type))
 	return it
 
 
@@ -463,7 +476,7 @@ func score(class_id: String) -> float:
 	s += stat_total("armor") * 0.10
 	s += stat_total("hp") * 0.025
 	s += (weapon_min + weapon_max) * 0.5 * 1.5
-	s += float(quality) * (22.0 + float(ilvl) * 2.5)
+	s += float(quality) * 3.0 + float(ilvl) * 1.0
 	return s
 
 
