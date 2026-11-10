@@ -991,10 +991,30 @@ func item_power(item: GameItem, cid: String = "") -> int:
 
 
 func combat_power() -> int:
-	var s := compute_stats()
-	var hit := maxf(1.0, float(s.get("dps", 1.0)) * float(s.get("interval", 1.0)))
-	var ehp := maxf(1.0, float(s.get("ehp", 1.0)))
-	return int(round(sqrt(hit * ehp)))
+	var total := 0.0
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it != null:
+			total += it.score(class_id)
+	var cls := Data.class_def(class_id)
+	var main_key := String(cls.get("main", "strength"))
+	var base: Dictionary = cls.get("base", {})
+	var growth: Dictionary = cls.get("growth", {})
+	for key in ["strength", "agility", "intellect", "stamina"]:
+		var value := float(base.get(key, 0.0)) + float(growth.get(key, 0.0)) * float(level - 1)
+		var weight := 2.2 if key == main_key else (1.1 if key == "stamina" else 0.5)
+		total += value * weight
+	var set_bonus := 0.0
+	for entry in active_sets():
+		var sd := Data.set_def(String(entry.get("id", "")))
+		var bonuses: Dictionary = sd.get("bonuses", {})
+		for threshold in bonuses:
+			if int(entry.get("count", 0)) < int(threshold):
+				continue
+			for key in bonuses[threshold]:
+				set_bonus += float(bonuses[threshold][key]) * 300.0
+	total += set_bonus
+	return int(round(total))
 
 
 func reference_level() -> int:
