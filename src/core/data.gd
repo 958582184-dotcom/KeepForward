@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "0.95.0"
+const VERSION := "0.96.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -708,18 +708,20 @@ static func dungeon_title(d: Dictionary) -> String:
 
 static func recommended_combat_power(d: Dictionary, reference_level: int = 0) -> int:
 	var lv := int(d.get("level", 1))
-	var base := 70.0 * float(lv) + 40.0
-	var mult := 1.0
-	match String(d.get("difficulty", "normal")):
-		"elite":
-			mult = 1.18
-		"hero":
-			mult = 1.32
-	if String(d.get("kind", "normal")) == "boss":
-		mult = maxf(mult, 1.30)
-	if reference_level > 0:
-		mult *= 1.0 + 0.12 * float(maxi(0, lv - reference_level))
-	return int(round(base * mult / 10.0)) * 10
+	var diff := String(d.get("difficulty", "normal"))
+	var monsters: Array = d.get("monsters", ["normal"])
+	var difficulty_product := 0.0
+	for type_id in monsters:
+		var hp := monster_hp(String(type_id), lv, diff)
+		var hit := monster_damage(String(type_id), lv, diff)
+		if reference_level > 0:
+			var gap := level_gap_multipliers(reference_level, lv)
+			hp *= gap.x
+			hit *= gap.y
+		difficulty_product += hp * hit
+	if difficulty_product <= 0.0:
+		difficulty_product = 1.0
+	return int(round(sqrt(difficulty_product) * 1.10 / 10.0)) * 10
 
 
 static func boss_title(level: int) -> String:
