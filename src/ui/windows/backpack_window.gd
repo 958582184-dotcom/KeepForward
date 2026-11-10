@@ -437,7 +437,7 @@ func _refresh_body(box: VBoxContainer) -> void:
 	name_pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	char_head.add_child(name_pad)
 	char_head.add_child(UiKit.label(Data.character_name(Game.class_id), 18, Color(String(ch["color"]))))
-	var level_label := UiKit.label("Lv.%d / 上限 %d" % [Game.level, Game.level_cap()], 11, UiKit.COL_MUTED)
+	var level_label := UiKit.label("Lv.%d" % Game.level, 12, UiKit.COL_MUTED)
 	level_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	level_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	char_head.add_child(level_label)

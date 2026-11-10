@@ -30,6 +30,8 @@ static func build(dungeon: Dictionary, members: Array, rng: RandomNumberGenerato
 			"shield": 0.0,
 			"alive": true,
 			"attack_count": 0,
+			"broker_stacks": 0,
+			"ember_used": false,
 		}
 		combatants[str(id)] = c
 		order.append(str(id))
@@ -62,12 +64,37 @@ static func build(dungeon: Dictionary, members: Array, rng: RandomNumberGenerato
 				var p: Dictionary = c["profile"]
 				var st: Dictionary = p.get("stats", {})
 				c["attack_count"] = int(c["attack_count"]) + 1
+				if bool(st.get("art_sleepless", false)) and float(c["hp"]) / float(c["hp_max"]) < 0.40:
+					var gained_shield := minf((float(c["hp_max"]) - float(c["hp"])) * 0.06, float(c["hp_max"]) * 0.20)
+					c["shield"] = minf(float(c["hp_max"]) * 0.20, float(c["shield"]) + gained_shield)
+				if bool(st.get("art_lifeline", false)):
+					c["hp"] = minf(float(c["hp_max"]), float(c["hp"]) + (float(c["hp_max"]) - float(c["hp"])) * 0.04)
 				var eff_armor := mon_armor * (1.0 - float(st.get("pen_pct", 0.0)))
 				var armor_mit := clampf(eff_armor / (eff_armor + 90.0 + 12.0 * mon_level), 0.0, 0.75)
 				var player_hit := maxf(1.0, float(st.get("dps", 1.0)) * float(st.get("interval", 1.0))
 					* (1.0 - armor_mit))
-				var dmg := maxi(1, int(round(player_hit * rng.randf_range(0.90, 1.10))))
+				var damage_mult := 1.0
+				if bool(st.get("art_starfall", false)):
+					damage_mult += maxf(0.0, 0.15 - 0.03 * float(rounds - 1))
+				if bool(st.get("art_timesand", false)) and rounds <= 3:
+					damage_mult += 0.25
+				if bool(st.get("art_burn_world", false)):
+					damage_mult += 0.03 * float(mini(5, int(c["attack_count"])))
+				if bool(st.get("art_broker_hands", false)):
+					damage_mult += 0.05 * float(c["broker_stacks"])
+				var dmg := maxi(1, int(round(player_hit * damage_mult * rng.randf_range(0.90, 1.10))))
 				var note := ""
+				if bool(st.get("art_windcut", false)) and int(c["attack_count"]) % 2 == 0:
+					dmg = int(round(float(dmg) * 1.10))
+					note = "断风暴击"
+				if bool(st.get("art_burn_world", false)) and enemy_hp < total_hp * 0.30:
+					var execute := maxi(1, int(round(total_hp * 0.08)))
+					dmg += execute
+					note = "焚尽斩杀 +%d" % execute
+				if bool(st.get("art_gravebell", false)) and rounds % 5 == 0:
+					var toll := maxi(1, int(round(float(st.get("armor_total", 0.0)) * 1.5)))
+					dmg += toll
+					note = "丧钟 +%d" % toll
 				var school := String(p.get("school", ""))
 				if school == "swift" and int(c["attack_count"]) % 3 == 0:
 					var extra := maxi(1, int(round(float(dmg) * 0.6)))
@@ -83,8 +110,14 @@ static func build(dungeon: Dictionary, members: Array, rng: RandomNumberGenerato
 						note = "奥术回响 +%d" % echo
 				dmg = mini(dmg, int(ceil(enemy_hp)))
 				enemy_hp = maxf(0.0, enemy_hp - float(dmg))
-				c["hp"] = minf(float(c["hp_max"]),
-					float(c["hp"]) + float(dmg) * float(st.get("lifesteal_pct", 0.0)) + float(st.get("hp_regen", 0.0)))
+				var before_heal := float(c["hp"])
+				var heal := float(dmg) * float(st.get("lifesteal_pct", 0.0)) + float(st.get("hp_regen", 0.0))
+				c["hp"] = minf(float(c["hp_max"]), before_heal + heal)
+				if bool(st.get("art_bloodpact", false)) and before_heal + heal > float(c["hp_max"]):
+					c["shield"] = minf(float(c["hp_max"]) * 0.15,
+						float(c["shield"]) + before_heal + heal - float(c["hp_max"]))
+				if bool(st.get("art_broker_hands", false)) and rng.randf() < float(st.get("crit_pct", 0.0)):
+					c["broker_stacks"] = mini(3, int(c["broker_stacks"]) + 1)
 				var shield_target := _front(combatants, order)
 				if school == "moon" and shield_target != "":
 					var front: Dictionary = combatants[shield_target]
@@ -115,9 +148,17 @@ static func build(dungeon: Dictionary, members: Array, rng: RandomNumberGenerato
 			var avoid := (1.0 - pmit) * (1.0 - float(tst.get("dodge_pct", 0.0))) \
 				* (1.0 - float(tst.get("parry_pct", 0.0))) * (1.0 - float(tst.get("block_pct", 0.0)))
 			var mdmg := maxi(1, int(round(mon_dmg * avoid * rng.randf_range(0.90, 1.10))))
+			if bool(tst.get("art_gravebell", false)):
+				mdmg = maxi(1, int(round(float(mdmg) * 0.90)))
 			var absorbed := mini(mdmg, int(floor(float(target["shield"]))))
 			target["shield"] = float(target["shield"]) - float(absorbed)
-			target["hp"] = maxf(0.0, float(target["hp"]) - float(mdmg - absorbed))
+			var incoming := mdmg - absorbed
+			if bool(tst.get("art_ember_robe", false)) and not bool(target["ember_used"]) and incoming >= float(target["hp"]):
+				target["ember_used"] = true
+				incoming = 0
+				absorbed = mdmg
+				target["hp"] = minf(float(target["hp_max"]), float(target["hp"]) + float(target["hp_max"]) * 0.25)
+			target["hp"] = maxf(0.0, float(target["hp"]) - float(incoming))
 			if float(target["hp"]) <= 0.0:
 				target["alive"] = false
 			turns.append({
@@ -213,4 +254,20 @@ static func _build_rewards(dungeon: Dictionary, profiles: Array, rng: RandomNumb
 			"explore": explore,
 			"metrics": {"kills": kills, "bosses": bosses, "items": items.size(), "dungeons": 1},
 		}
+	if is_boss and not rewards.is_empty():
+		var leader_id := ""
+		var leader_class := "warrior"
+		for p in profiles:
+			if bool(p.get("is_leader", false)):
+				leader_id = str(int(p.get("id", 0)))
+				leader_class = String(p.get("character_id", "warrior"))
+				break
+		if leader_id == "":
+			leader_id = str(int(profiles[0].get("id", 0)))
+			leader_class = String(profiles[0].get("character_id", "warrior"))
+		var artifact_ids: Array = Data.ARTIFACTS.keys()
+		var artifact_id := String(artifact_ids[rng.randi_range(0, artifact_ids.size() - 1)])
+		var artifact := GameItem.create_artifact(rng, artifact_id, mon_level, leader_class)
+		rewards[leader_id]["items"].append(artifact.to_dict())
+		rewards[leader_id]["metrics"]["items"] = int(rewards[leader_id]["metrics"]["items"]) + 1
 	return rewards

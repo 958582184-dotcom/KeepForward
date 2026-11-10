@@ -23,17 +23,19 @@ var shop_factor := 1.0
 var set_id := ""
 var set_name := ""
 var set_level := 0
+var uniq := ""
 
 
 static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: String,
-		slot_hint: String = "", source_tag: String = "drop") -> GameItem:
+		slot_hint: String = "", source_tag: String = "drop",
+		fixed_armor: String = "", fixed_weapon: String = "") -> GameItem:
 	var it := GameItem.new()
 	it.uid = _uid_seq
 	_uid_seq += 1
 	it.ilvl = maxi(1, level)
 	if source_tag == "starter":
 		it.req_level = 1
-	elif source_tag == "shop":
+	elif source_tag == "shop" or source_tag == "boss":
 		it.req_level = Data.equip_tier_floor(level)
 	else:
 		var lower := Data.equip_tier_floor(level)
@@ -43,7 +45,7 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 		it.req_level = lower if lower == upper or rng.randf() < 0.5 else upper
 	it.req_level = Data.normalize_equip_tier(it.req_level)
 	it.ilvl = it.req_level
-	it.quality = clampi(q, 0, 4)
+	it.quality = clampi(q, 0, 5)
 	it.source = source_tag
 	it.slot = slot_hint if slot_hint != "" else _pick_slot(rng)
 	var cls: Dictionary = Data.class_def(class_id)
@@ -55,11 +57,11 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 
 	match kind:
 		"armor":
-			it.armor_type = String(cls["armor_types"][rng.randi_range(0, cls["armor_types"].size() - 1)])
+			it.armor_type = fixed_armor if fixed_armor != "" else String(cls["armor_types"][rng.randi_range(0, cls["armor_types"].size() - 1)])
 			it.style = String(Data.ARMOR_STYLE_BY_TYPE.get(it.armor_type, "knight"))
 			it.stats["armor"] = round((6.0 + it.ilvl * 4.8) * qmult * _armor_type_scale(it.armor_type))
 		"weapon":
-			it.weapon_type = cls["weapon_types"][rng.randi_range(0, cls["weapon_types"].size() - 1)]
+			it.weapon_type = fixed_weapon if fixed_weapon != "" else cls["weapon_types"][rng.randi_range(0, cls["weapon_types"].size() - 1)]
 			it.style = String(Data.WEAPON_STYLE.get(it.weapon_type, "knight"))
 			var wscale := 1.0
 			if cls["main"] == "strength":
@@ -129,7 +131,7 @@ static func create(rng: RandomNumberGenerator, level: int, q: int, class_id: Str
 static func _stat_budget(slot: String, ilvl: int, q: int) -> float:
 	var base := float(Data.SLOT_STAT_BASE.get(slot, 9.0))
 	var level_mult := 1.0 + float(ilvl - 1) * 0.18
-	return base * level_mult * float(Data.QUALITY_STAT_MULT[clampi(q, 0, 4)])
+	return base * level_mult * float(Data.QUALITY_STAT_MULT[clampi(q, 0, 5)])
 
 
 static func _stat_pool(kind: String, main_key: String, cls: Dictionary) -> Array:
@@ -162,7 +164,7 @@ static func rebuild_stats(it: GameItem, class_id: String, rng: RandomNumberGener
 	it.weapon_max = template.weapon_max
 	var cls := Data.class_def(class_id)
 	var kind := String(Data.SLOT_INFO.get(it.slot, {}).get("kind", "armor"))
-	var qmult := float(Data.QUALITY_STAT_MULT[clampi(it.quality, 0, 4)])
+	var qmult := float(Data.QUALITY_STAT_MULT[clampi(it.quality, 0, 5)])
 	if kind == "armor" and it.armor_type != "":
 		it.stats["armor"] = round((6.0 + it.ilvl * 4.8) * qmult * _armor_type_scale(it.armor_type))
 	elif kind == "offhand" and it.weapon_type == "shield":
@@ -345,6 +347,19 @@ static func create_dungeon_drop(rng: RandomNumberGenerator, level: int, q: int, 
 	return create(rng, level, q, class_id, slot, "drop")
 
 
+static func create_artifact(rng: RandomNumberGenerator, artifact_id: String, level: int, class_id: String) -> GameItem:
+	var d := Data.artifact_def(artifact_id)
+	if d.is_empty():
+		return null
+	var it := create(rng, level, 5, class_id, String(d.get("slot", "head")), "boss",
+		String(d.get("armor", "")), String(d.get("weapon", "")))
+	it.quality = 5
+	it.uniq = artifact_id
+	it.item_name = String(d.get("name", artifact_id))
+	it.locked = true
+	return it
+
+
 static func create_set_piece(rng: RandomNumberGenerator, set_id: String, slot: String,
 		level: int, q: int, class_id: String) -> GameItem:
 	var d := Data.set_def(set_id)
@@ -506,6 +521,8 @@ func score(class_id: String) -> float:
 	s += stat_total("armor") * 0.10
 	s += stat_total("hp") * 0.025
 	s += (weapon_min + weapon_max) * 0.5 * 1.5
+	if uniq != "":
+		s += float(Data.artifact_def(uniq).get("score", 0.0))
 	s += float(quality) * 3.0 + float(ilvl) * 1.0
 	return s
 
@@ -517,6 +534,7 @@ func to_dict() -> Dictionary:
 		"stats": stats.duplicate(), "price": price, "src": source, "locked": locked,
 		"style": style, "rune": rune_stat,
 		"set": set_id, "set_name": set_name, "set_lvl": set_level,
+		"uniq": uniq,
 		"spf": shop_factor,
 	}
 
@@ -544,6 +562,7 @@ static func from_dict(d: Dictionary) -> GameItem:
 	it.set_id = String(d.get("set", ""))
 	it.set_name = String(d.get("set_name", ""))
 	it.set_level = int(d.get("set_lvl", 0))
+	it.uniq = String(d.get("uniq", ""))
 	if it.style == "":
 		if it.weapon_type != "":
 			it.style = String(Data.WEAPON_STYLE.get(it.weapon_type, ""))

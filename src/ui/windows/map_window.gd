@@ -191,11 +191,11 @@ func _update_footer_info() -> void:
 			levels += int(m.get("level", 1))
 			powers += _member_power(m)
 		var avg := float(levels) / float(Net.members.size())
-		_footer_info.text = "%d 人  ·  平均 Lv.%.1f  ·  上限 Lv.%d  ·  总战力 %s" % [
-			Net.members.size(), avg, Game.level_cap(), UiKit.num(powers)]
+		_footer_info.text = "%d 人  ·  平均 Lv.%.1f  ·  总战力 %s" % [
+			Net.members.size(), avg, UiKit.num(powers)]
 	else:
-		_footer_info.text = "Lv.%d / 上限 %d  ·  战力 %s" % [
-			Game.level, Game.level_cap(), UiKit.num(Game.combat_power())]
+		_footer_info.text = "Lv.%d  ·  战力 %s" % [
+			Game.level, UiKit.num(Game.combat_power())]
 	_footer_info.add_theme_color_override("font_color", UiKit.COL_GOLD if Net.in_party else UiKit.COL_MUTED)
 
 

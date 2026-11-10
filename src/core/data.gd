@@ -2,7 +2,7 @@ class_name Data
 extends RefCounted
 
 const TITLE := "KeepForward"
-const VERSION := "1.02.0"
+const VERSION := "1.03.0"
 const SAVE_PATH := "user://ember_walker_save.json"
 const INVENTORY_SIZE := 100
 const MAX_LEVEL := 60
@@ -162,9 +162,43 @@ const QUALITIES := [
 	{"name": "精良", "color": "#4aa3ff", "mult": 1.14, "affixes": 3},
 	{"name": "史诗", "color": "#b96bff", "mult": 1.26, "affixes": 4},
 	{"name": "传说", "color": "#ff9f43", "mult": 1.42, "affixes": 5},
+	{"name": "神器", "color": "#ff3b30", "mult": 1.62, "affixes": 6},
 ]
 
-const QUALITY_STAT_MULT := [1.00, 1.30, 1.70, 2.20, 2.80]
+const ARTIFACTS := {
+	"burn_world": {"name": "焚世", "slot": "main", "weapon": "axe", "school": "berserker",
+		"effect": "焚尽", "score": 130,
+		"desc": "每次攻击使目标受到的伤害 +3%，最多 5 层；目标生命低于 30% 时，额外造成其最大生命 8% 的伤害"},
+	"starfall": {"name": "星陨", "slot": "main", "weapon": "staff", "school": "arcane",
+		"effect": "陨落", "score": 95,
+		"desc": "战斗开始时法术强度 +15%，每回合递减 3%，最低为 0"},
+	"windcut": {"name": "断风", "slot": "main", "weapon": "longbow", "school": "hunt",
+		"effect": "断风", "score": 120,
+		"desc": "每第 2 次攻击必定暴击；暴击伤害 +10%"},
+	"sleepless": {"name": "不眠之颅", "slot": "head", "armor": "plate", "school": "knight",
+		"effect": "不眠", "score": 90,
+		"desc": "生命低于 40% 时，每回合获得已损失生命 6% 的护盾，护盾上限为生命上限的 20%"},
+	"ember_robe": {"name": "余烬之衣", "slot": "chest", "armor": "cloth", "school": "moon",
+		"effect": "余烬", "score": 110,
+		"desc": "每场战斗首次受到致命伤害时免疫该次伤害，并回复 25% 生命上限"},
+	"broker_hands": {"name": "掮客之手", "slot": "hands", "armor": "leather", "school": "swift",
+		"effect": "掮客", "score": 70,
+		"desc": "暴击率 +10%；每次暴击使急速 +5%，最多 3 层"},
+	"lifeline": {"name": "命线", "slot": "neck", "school": "",
+		"effect": "命线", "score": 80,
+		"desc": "生命上限 +12%；每回合结束回复已损失生命 4%"},
+	"bloodpact": {"name": "血契", "slot": "ring", "school": "",
+		"effect": "血契", "score": 100,
+		"desc": "吸血 +8%；治疗溢出转化为护盾，护盾上限为生命上限的 15%"},
+	"timesand": {"name": "时砂", "slot": "trinket", "school": "",
+		"effect": "时砂", "score": 60,
+		"desc": "前 3 回合急速 +25%"},
+	"gravebell": {"name": "守墓人的钟", "slot": "trinket", "school": "",
+		"effect": "丧钟", "score": 85,
+		"desc": "受到伤害 -10%；每第 5 回合对怪物造成自身护甲 150% 的伤害"},
+}
+
+const QUALITY_STAT_MULT := [1.00, 1.30, 1.70, 2.20, 2.80, 3.20]
 const SLOT_STAT_BASE := {
 	"head": 10.0, "chest": 12.0, "hands": 9.0, "legs": 11.0, "feet": 9.0,
 	"main": 12.0, "off": 8.5, "neck": 7.0, "ring": 7.0, "trinket": 7.0, "rune": 6.0,
@@ -416,7 +450,7 @@ const SHOP_LEVEL_RANGE := 10
 const SHOP_FREE_PER_HOUR := 5
 const SHOP_PAID_COST := 100
 const SHOP_QUALITY_WEIGHTS := [20, 40, 23, 15, 2]
-const QUALITY_PRICE_MULT := [1.0, 2.2, 5.0, 12.0, 28.0]
+const QUALITY_PRICE_MULT := [1.0, 2.2, 5.0, 12.0, 28.0, 60.0]
 
 # 副本掉落：0-2 件，稀有度整体压低紫色及以上
 const DUNGEON_DROP_COUNT_WEIGHTS := [30, 50, 20]
@@ -456,7 +490,11 @@ static func character_name(class_id: String) -> String:
 
 
 static func quality_color(q: int) -> Color:
-	return Color(QUALITIES[clampi(q, 0, 4)]["color"])
+	return Color(QUALITIES[clampi(q, 0, 5)]["color"])
+
+
+static func artifact_def(uniq: String) -> Dictionary:
+	return ARTIFACTS.get(uniq, {})
 
 
 static func set_def(set_id: String) -> Dictionary:
@@ -529,7 +567,7 @@ static func set_bonus_text(bonus: Dictionary) -> String:
 
 
 static func quality_name(q: int) -> String:
-	return QUALITIES[clampi(q, 0, 4)]["name"]
+	return QUALITIES[clampi(q, 0, 5)]["name"]
 
 
 static func difficulty_color(diff: String) -> Color:

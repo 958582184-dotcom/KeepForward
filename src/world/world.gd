@@ -301,6 +301,9 @@ func _run_dungeon(d: Dictionary) -> bool:
 		_set_player_hp(_combat_hp, _combat_hp_max, true)
 		if not is_boss:
 			Game.add_exploration(float(Data.EXPLORE_CLEAR_GAIN.get(String(d["difficulty"]), 1.0)))
+		var artifact: GameItem = null
+		if is_boss:
+			artifact = Game.grant_boss_artifact(base_level)
 		var loot := Game.grant_dungeon_loot(base_level, String(d["difficulty"]))
 		var loot_names: Array = []
 		for it in loot:
@@ -309,11 +312,14 @@ func _run_dungeon(d: Dictionary) -> bool:
 		if hud != null:
 			if is_boss:
 				hud.add_log("区域首领已击败 · 探索度清零", UiKit.COL_GOLD, "summary")
+			if artifact != null:
+				hud.add_log("首领掉落 · 神器：%s" % artifact.item_name, artifact.quality_color(), "battle")
+				hud.add_log("获得神器：%s" % artifact.item_name, artifact.quality_color(), "summary")
 			hud.add_log("状态已恢复", UiKit.COL_GREEN)
-			if loot_names.is_empty():
+			if loot_names.is_empty() and artifact == null:
 				hud.add_log("副本完成 · 未掉落装备", UiKit.COL_GREEN, "battle")
 				hud.add_log("本局未获得装备", UiKit.COL_MUTED, "summary")
-			else:
+			elif not loot_names.is_empty():
 				hud.add_log("副本完成 · 获得装备：%s" % "、".join(loot_names), UiKit.COL_GREEN, "battle")
 				for it in loot:
 					hud.add_log("获得装备：%s" % it.item_name, it.quality_color(), "summary")

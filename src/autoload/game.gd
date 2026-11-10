@@ -470,8 +470,12 @@ func compute_stats() -> Dictionary:
 		crit += float(s["intellect"]) * 0.0010
 	crit += float(set_pct.get("crit_pct", 0.0))
 	crit = clampf(crit, 0.02, 0.60)
+	if has_artifact("broker_hands"):
+		crit = clampf(crit + 0.10, 0.02, 0.60)
 
 	var crit_dmg: float = 1.5 + float(s["crit_dmg"]) / 1000.0 + float(set_pct.get("crit_dmg_pct", 0.0))
+	if has_artifact("windcut"):
+		crit_dmg += 0.10
 	var haste: float = float(s["haste"]) / 1000.0 + float(set_pct.get("haste_pct", 0.0))
 	var ch: Dictionary = Data.character_def(class_id)
 	power *= 1.0 + float(ch.get("power_pct", 0.0))
@@ -491,6 +495,8 @@ func compute_stats() -> Dictionary:
 	block = clampf(block, 0.0, 0.45)
 	var vers: float = clampf(float(s["vers"]) / 1200.0, 0.0, 0.30)
 	var lifesteal: float = clampf(float(s["lifesteal"]) / 1500.0 + float(ch.get("lifesteal", 0.0)) + float(set_pct.get("lifesteal_pct", 0.0)), 0.0, 0.30)
+	if has_artifact("bloodpact"):
+		lifesteal = clampf(lifesteal + 0.08, 0.0, 0.30)
 	var pen: float = clampf(float(s["pen"]) / 1000.0 + float(ch.get("pen", 0.0)) + float(set_pct.get("pen_pct", 0.0)), 0.0, 0.65)
 	var hp_regen: float = maxf(0.0, float(s["hp_regen"]))
 	var extra_attack_pct: float = clampf(float(s["extra_attack"]) / 100.0, 0.0, 0.30)
@@ -505,6 +511,8 @@ func compute_stats() -> Dictionary:
 	var stamina: float = float(s["stamina"])
 	var hp: float = float(cls["base_hp"]) + stamina * 10.0 + level * 6.0 + float(s["hp"])
 	hp *= 1.0 + float(ch.get("hp_pct", 0.0)) + float(set_pct.get("hp_pct", 0.0))
+	if has_artifact("lifeline"):
+		hp *= 1.12
 	var armor: float = 10.0 + level * 2.0 + float(s["armor"])
 	armor *= 1.0 + float(ch.get("armor_pct", 0.0)) + float(set_pct.get("armor_pct", 0.0))
 	var mit: float = armor / (armor + 90.0 + 12.0 * level)
@@ -537,6 +545,16 @@ func compute_stats() -> Dictionary:
 	out["ehp"] = ehp
 	out["interval"] = interval
 	out["active_sets"] = active_sets_list
+	out["art_burn_world"] = has_artifact("burn_world")
+	out["art_starfall"] = has_artifact("starfall")
+	out["art_windcut"] = has_artifact("windcut")
+	out["art_sleepless"] = has_artifact("sleepless")
+	out["art_ember_robe"] = has_artifact("ember_robe")
+	out["art_broker_hands"] = has_artifact("broker_hands")
+	out["art_lifeline"] = has_artifact("lifeline")
+	out["art_bloodpact"] = has_artifact("bloodpact")
+	out["art_timesand"] = has_artifact("timesand")
+	out["art_gravebell"] = has_artifact("gravebell")
 	return out
 
 
@@ -1002,6 +1020,14 @@ func item_power(item: GameItem, cid: String = "") -> int:
 	return int(round(item.score(owner)))
 
 
+func has_artifact(artifact_id: String) -> bool:
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it != null and it.uniq == artifact_id:
+			return true
+	return false
+
+
 func combat_power() -> int:
 	var total := 0.0
 	for key in Data.EQUIP_ORDER:
@@ -1319,6 +1345,61 @@ func grant_kill(mon: Dictionary, diff: String) -> Dictionary:
 	return {"exp": exp_gain, "gold": gold_gain, "drops": [], "explore": 0.0}
 
 
+func grant_boss_artifact(level: int) -> GameItem:
+	var artifact_id := _pick_artifact_id()
+	var item := GameItem.create_artifact(rng, artifact_id, level, class_id)
+	if not add_item(item):
+		if _free_slot_for_artifact():
+			add_item(item)
+		else:
+			return null
+	toast.emit("获得神器：%s" % item.item_name, item.quality_color())
+	_dirty = true
+	return item
+
+
+func _pick_artifact_id() -> String:
+	var owned := {}
+	for key in Data.EQUIP_ORDER:
+		var it: GameItem = equipment.get(key)
+		if it != null and it.uniq != "":
+			owned[it.uniq] = true
+	for it in inventory:
+		if it != null and it.uniq != "":
+			owned[it.uniq] = true
+	var missing: Array = []
+	for id in Data.ARTIFACTS:
+		if not owned.has(id):
+			missing.append(id)
+	var pool: Array = Data.ARTIFACTS.keys()
+	if not missing.is_empty() and rng.randf() < 0.7:
+		pool = missing
+	return String(pool[rng.randi_range(0, pool.size() - 1)])
+
+
+func _free_slot_for_artifact() -> bool:
+	var slot := -1
+	var lowest := 1e20
+	for i in inventory.size():
+		var it: GameItem = inventory[i]
+		if it == null or it.locked or it.uniq != "":
+			continue
+		var sc := it.score(class_id)
+		if sc < lowest:
+			lowest = sc
+			slot = i
+	if slot < 0:
+		toast.emit("背包已满，神器无法拾取", Color("#ff7b72"))
+		return false
+	var sold: GameItem = inventory[slot]
+	gold += sold.sell_value()
+	inventory[slot] = null
+	gold_changed.emit()
+	inventory_changed.emit()
+	toast.emit("背包已满，自动出售 %s 腾出神器位置" % sold.item_name, Color("#e0b45a"))
+	return true
+
+
 func grant_dungeon_loot(level: int, diff: String = "normal") -> Array:
 	var count := Data.weighted_pick(rng, Data.DUNGEON_DROP_COUNT_WEIGHTS)
 	var drops: Array = []
@@ -1373,7 +1454,16 @@ func apply_team_reward(reward: Dictionary) -> void:
 	var items: Array = reward.get("items", [])
 	for d in items:
 		if d is Dictionary:
-			receive_drop(GameItem.from_dict(d))
+			var it := GameItem.from_dict(d)
+			if it.uniq != "":
+				var preferred := _pick_artifact_id()
+				if preferred != it.uniq:
+					it = GameItem.create_artifact(rng, preferred, it.ilvl, class_id)
+				it.locked = true
+				if not add_item(it) and _free_slot_for_artifact():
+					add_item(it)
+			else:
+				receive_drop(it)
 	_dirty = true
 	save_game()
 
@@ -1412,16 +1502,44 @@ func build_battle(mon: Dictionary, diff: String, start_hp: float = -1.0) -> Dict
 
 	var hp_max: float = float(s["hp_max"])
 	var player_hp := hp_max if start_hp < 0.0 else clampf(start_hp, 0.0, hp_max)
+	var shield_cap := hp_max * 0.20
 	var player_shield := 0.0
 	var attack_count := 0
+	var broker_stacks := 0
+	var ember_used := false
 	var monster_hp := total_hp
 	var turns: Array = []
 	var guard := 0
 	while monster_hp > 0.0 and player_hp > 0.0 and guard < 120:
 		guard += 1
 		attack_count += 1
-		var dmg := maxi(1, int(round(player_hit * rng.randf_range(0.90, 1.10))))
+		if bool(s.get("art_sleepless", false)) and player_hp / hp_max < 0.40:
+			var gained_shield := minf((hp_max - player_hp) * 0.06, shield_cap)
+			player_shield = minf(shield_cap, player_shield + gained_shield)
+		if bool(s.get("art_lifeline", false)):
+			player_hp = minf(hp_max, player_hp + (hp_max - player_hp) * 0.04)
+		var damage_mult := 1.0
+		if bool(s.get("art_starfall", false)):
+			damage_mult += maxf(0.0, 0.15 - 0.03 * float(guard - 1))
+		if bool(s.get("art_timesand", false)) and guard <= 3:
+			damage_mult += 0.25
+		if bool(s.get("art_burn_world", false)):
+			damage_mult += 0.03 * float(mini(5, guard))
+		if bool(s.get("art_broker_hands", false)):
+			damage_mult += 0.05 * float(broker_stacks)
+		var dmg := maxi(1, int(round(player_hit * damage_mult * rng.randf_range(0.90, 1.10))))
 		var note := ""
+		if bool(s.get("art_windcut", false)) and attack_count % 2 == 0:
+			dmg = int(round(float(dmg) * 1.10))
+			note = "断风暴击"
+		if bool(s.get("art_burn_world", false)) and monster_hp < total_hp * 0.30:
+			var execute := maxi(1, int(round(total_hp * 0.08)))
+			dmg += execute
+			note = "焚尽斩杀 +%d" % execute
+		if bool(s.get("art_gravebell", false)) and guard % 5 == 0:
+			var toll := maxi(1, int(round(player_armor * 1.5)))
+			dmg += toll
+			note = "丧钟 +%d" % toll
 		if school == "swift" and attack_count % 3 == 0:
 			var extra := maxi(1, int(round(float(dmg) * 0.6)))
 			dmg += extra
@@ -1430,12 +1548,19 @@ func build_battle(mon: Dictionary, diff: String, start_hp: float = -1.0) -> Dict
 			var echo := maxi(1, int(round(float(player_hit) * rng.randf_range(0.90, 1.10))))
 			dmg += echo
 			note = "奥术回响 +%d" % echo
+		if bool(s.get("art_broker_hands", false)) and rng.randf() < float(s["crit_pct"]):
+			broker_stacks = mini(3, broker_stacks + 1)
 		dmg = mini(dmg, int(ceil(monster_hp)))
 		monster_hp = maxf(0.0, monster_hp - dmg)
-		player_hp = minf(hp_max, player_hp + float(dmg) * float(s["lifesteal_pct"]) + float(s["hp_regen"]))
+		var heal := float(dmg) * float(s["lifesteal_pct"]) + float(s["hp_regen"])
+		var before_heal := player_hp
+		player_hp = minf(hp_max, player_hp + heal)
+		if bool(s.get("art_bloodpact", false)) and before_heal + heal > hp_max:
+			var overflow := before_heal + heal - hp_max
+			player_shield = minf(hp_max * 0.15, player_shield + overflow)
 		if school == "moon":
 			var gained := float(dmg) * 0.06
-			player_shield = minf(hp_max * 0.20, player_shield + gained)
+			player_shield = minf(shield_cap, player_shield + gained)
 			if note == "":
 				note = "月辉护盾 +%d" % int(round(gained))
 		turns.append({
@@ -1446,9 +1571,17 @@ func build_battle(mon: Dictionary, diff: String, start_hp: float = -1.0) -> Dict
 		if monster_hp <= 0.0:
 			break
 		var mdmg := maxi(1, int(round(monster_hit * rng.randf_range(0.90, 1.10))))
+		if bool(s.get("art_gravebell", false)):
+			mdmg = maxi(1, int(round(float(mdmg) * 0.90)))
 		var absorbed := mini(mdmg, int(floor(player_shield)))
 		player_shield -= float(absorbed)
-		player_hp = maxf(0.0, player_hp - float(mdmg - absorbed))
+		var incoming := mdmg - absorbed
+		if bool(s.get("art_ember_robe", false)) and not ember_used and incoming >= player_hp:
+			ember_used = true
+			incoming = 0
+			player_hp = minf(hp_max, player_hp + hp_max * 0.25)
+			absorbed = mdmg
+		player_hp = maxf(0.0, player_hp - float(incoming))
 		turns.append({
 			"side": "monster", "dmg": mdmg, "absorbed": absorbed,
 			"monster_hp": int(ceil(monster_hp)), "player_hp": int(ceil(player_hp)),

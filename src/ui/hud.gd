@@ -475,6 +475,8 @@ func _on_team_battle_finished(win: bool) -> void:
 				lines.append(item_name)
 				add_log("获得装备：%s" % item_name,
 					Data.quality_color(int(d.get("q", 0))), "summary")
+				if int(d.get("q", 0)) == 5 and String(d.get("uniq", "")) != "":
+					add_log("获得神器：%s" % item_name, Data.quality_color(5), "summary")
 		if not lines.is_empty():
 			add_log("个人掉落：%s" % "、".join(lines), UiKit.COL_GREEN, "battle")
 		add_log("战斗奖励：+%d 经验  +%d 金币" % [int(reward.get("exp", 0)), int(reward.get("gold", 0))],

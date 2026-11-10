@@ -66,6 +66,8 @@ func show_item(item: GameItem, compare: GameItem, class_id: String, hint: String
 
 
 func _add_item_block(parent: VBoxContainer, item: GameItem, class_id: String) -> void:
+	if item.quality == 5 and item.uniq != "":
+		parent.add_child(UiKit.label("首领掉落 · 神器", 10, Color("#ff8a80")))
 	parent.add_child(UiKit.label(item.item_name, 16, item.quality_color()))
 	parent.add_child(UiKit.label("评分 %d  ·  %s  ·  %s" % [Game.item_power(item, class_id), item.slot_name(),
 		item.quality_name()], 11, UiKit.COL_MUTED))
@@ -83,6 +85,14 @@ func _add_item_block(parent: VBoxContainer, item: GameItem, class_id: String) ->
 	for key in Data.AFFIX_KEYS:
 		if item.stats.has(key):
 			parent.add_child(UiKit.label(Data.fmt_affix(key, float(item.stats[key])), 12, UiKit.COL_TEAL))
+	if item.quality == 5 and item.uniq != "":
+		var ad := Data.artifact_def(item.uniq)
+		parent.add_child(UiKit.hsep())
+		var effect_label := UiKit.label("%s：%s" % [String(ad.get("effect", "神器")), String(ad.get("desc", ""))],
+			11, UiKit.COL_GOLD)
+		effect_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		effect_label.custom_minimum_size = Vector2(285, 0)
+		parent.add_child(effect_label)
 	parent.add_child(UiKit.label("售价 %d 金币" % item.sell_value(), 10, UiKit.COL_GOLD))
 
 
